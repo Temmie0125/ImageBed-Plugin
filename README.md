@@ -2,7 +2,7 @@
 
 Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式的图片/文件上传服务，支持自动 fallback、统计记录与 Web 可视化管理。
 
-如果使用了我的[🔗cnb图床](https://gitee.com/wind-trace-typ/cnb-image-bed)这个插件，那么请先找到Yunzai/plugins/example/cnb图床.js并删除，再安装本插件使用（本插件已经含有cnb图床，该插件为早期版本容易和本插件冲突）
+如果使用了我的[🔗cnb图床](https://gitee.com/wind-trace-typ/cnb-image-bed)这个插件，那么请先找到`Yunzai/plugins/example/cnb图床.js`并删除，再安装本插件使用（本插件已经含有cnb图床，该插件为早期版本容易和本插件冲突）
 
 ## 功能特性
 
@@ -146,6 +146,41 @@ ImageBed-Plugin/
 └── webadapter/
     ├── index.js             # Web 管理后台 API
     └── setting.html         # Web 管理面板前端
+```
+
+## QQBot适配器适配情况
+
+- 如果是TRSS Yunzai + 我改版的[🔗QQBot-Plugin](https://gitee.com/wind-trace-typ/QQBot-Plugin),那么无需修改就可支持自动使用此图床插件
+
+- 如果是Miao-Yunzai + Lain-Plugin适配器，也无需修改本身就支持自动使用本插件
+
+- 如果是TRSS Yunzai + 原版TRSS QQBot-Plugin,那么需要找到以下位置（大概在`Yunzai/plugins/QQBot-Plugin/index.js`的第139行左右，部分版本可能因为更新行数位置不同,找到`makeMarkdownImage`函数对应位置即可）
+
+```js
+136  async makeMarkdownImage(data, file, summary = "图片") {
+137    if (sharp) file = await this.compressImage(data, file)
+138    const buffer = await Bot.Buffer(file)
+139    const image = (await this.makeBotImage(buffer)) || { url: await Bot.fileToUrl(file) }
+140
+141    if (!image.width || !image.height)
+142      try {
+143        const size = imageSize(buffer)
+144        image.width = size.width
+145        image.height = size.height
+146      } catch (err) {
+147        Bot.makeLog("error", ["图片分辨率检测错误", file, err], data.self_id)
+148      }
+149
+150    return {
+151      des: `![${summary} #${image.width || 0}px #${image.height || 0}px]`,
+152      url: `(${image.url})`,
+153    }
+154  }
+```
+中的139行`const image = (await this.makeBotImage(buffer)) || { url: await Bot.fileToUrl(file) }`改为
+
+```js
+const image = await this.makeBotImage(buffer) || { url: typeof Bot.imageToUrl === 'function' ? await Bot.imageToUrl(file) : await Bot.fileToUrl(file) }
 ```
 
 ## 问题反馈
