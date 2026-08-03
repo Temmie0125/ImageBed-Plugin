@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>图床设置</title>
+<style>
+:root {
+  --accent: #4f6ef7;
+  --accent-light: #e8edff;
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --text2: #6b7280;
+  --danger: #ef4444;
+  --success: #10b981;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ===== 顶栏 ===== */
+.topbar {
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  height:56px; padding:0 24px;
+  background:var(--card); border-bottom:1px solid var(--border);
+  backdrop-filter:blur(8px);
+}
+.topbar-title { font-size:18px; font-weight:700; }
+.topbar-actions { display:flex; gap:10px; align-items:center; }
+
+/* ===== 内容区 ===== */
+.content { max-width:960px; margin:0 auto; padding:24px 24px 60px; }
+
+/* ===== 通用卡片 ===== */
+.section {
+  background:var(--card); border-radius:var(--radius);
+  border:1px solid var(--border); padding:24px; margin-bottom:20px;
+  box-shadow:var(--shadow);
+}
+.section-title {
+  font-size:16px; font-weight:700; margin-bottom:16px;
+  display:flex; align-items:center; gap:8px;
+}
+.section-title .icon { font-size:20px; }
+.section-desc { font-size:13px; color:var(--text2); margin-bottom:16px; }
+
+/* ===== 表单行 ===== */
+.form-row {
+  display:flex; align-items:center; justify-content:space-between;
+  min-height:40px; padding:8px 0;
+  border-bottom:1px solid var(--border);
+}
+.form-row:last-child { border-bottom:none; }
+.form-row-left { flex:1; min-width:0; padding-right:12px; }
+.form-row-label { font-size:14px; }
+.form-row-hint { font-size:12px; color:var(--text2); margin-top:2px; }
+
+/* ===== 胶囊开关 ===== */
+.pill-switch { position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0; }
+.pill-switch input { display:none; }
+.pill-switch .slider {
+  position:absolute; inset:0; border-radius:24px;
+  background:#d1d5db; cursor:pointer; transition:background .2s;
+}
+.pill-switch .slider::after {
+  content:""; position:absolute; width:20px; height:20px; border-radius:50%;
+  background:#fff; top:2px; left:2px; transition:transform .2s;
+  box-shadow:0 1px 2px rgba(0,0,0,.15);
+}
+.pill-switch input:checked + .slider { background:var(--accent); }
+.pill-switch input:checked + .slider::after { transform:translateX(20px); }
+
+/* ===== 输入框 ===== */
+.inp {
+  height:32px; padding:0 10px; border:1px solid var(--border); border-radius:6px;
+  font-size:13px; outline:none; background:var(--card);
+  transition:border-color .2s, box-shadow .2s;
+}
+.inp:focus { border-color:var(--accent); box-shadow:0 0 0 2px rgba(79,110,247,.15); }
+.inp-num { width:120px; }
+
+/* ===== 自定义下拉选择 ===== */
+.cusel { position:relative; width:130px; flex-shrink:0; margin-left:auto; }
+.cusel-trigger {
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  width:100%; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:8px;
+  font-size:13px; background:#f9fafb; cursor:pointer; color:var(--text);
+  transition:border-color .2s, box-shadow .2s, background .2s;
+  user-select:none;
+}
+.cusel-trigger:hover { border-color:var(--accent); background:#fff; }
+.cusel.open .cusel-trigger { border-color:var(--accent); box-shadow:0 0 0 2px rgba(79,110,247,.15); background:#fff; }
+.cusel-arrow {
+  font-size:10px; color:var(--text2); transition:transform .2s;
+  line-height:1;
+}
+.cusel.open .cusel-arrow { transform:rotate(180deg); }
+.cusel-drop {
+  position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:300;
+  background:var(--card); border:1px solid var(--border); border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  padding:4px; display:none;
+  animation:cslIn .15s ease;
+}
+.cusel.open .cusel-drop { display:block; }
+@keyframes cslIn {
+  from { opacity:0; transform:translateY(-4px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.cusel-opt {
+  padding:7px 12px; border-radius:7px; font-size:13px; cursor:pointer;
+  color:var(--text); transition:background .12s;
+}
+.cusel-opt:hover { background:var(--accent-light); color:var(--accent); }
+.cusel-opt.selected { background:var(--accent-light); color:var(--accent); font-weight:600; }
+
+
+/* ===== 按钮 ===== */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:4px;
+  height:34px; padding:0 16px; border-radius:8px; border:none;
+  font-size:13px; font-weight:600; cursor:pointer; transition:all .15s;
+}
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { filter:brightness(1.1); }
+.btn-ghost { background:transparent; color:var(--text2); border:1px solid var(--border); }
+.btn-ghost:hover { background:var(--bg); }
+.btn-sm { height:28px; padding:0 10px; font-size:12px; }
+
+/* ===== Toast ===== */
+.toast {
+  position:fixed; bottom:32px; left:50%; transform:translateX(-50%); z-index:999;
+  background:#1f2937; color:#fff; padding:10px 28px; border-radius:8px;
+  font-size:13px; opacity:0; transition:opacity .3s; pointer-events:none;
+}
+.toast.show { opacity:1; }
+.toast.error { background:var(--danger); }
+
+/* ===== 图床卡片网格 ===== */
+.hosting-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+  gap:12px;
+}
+.hosting-card {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px; cursor:pointer; transition:all .15s; text-align:center;
+}
+.hosting-card:hover { border-color:var(--accent); box-shadow:0 2px 8px rgba(79,110,247,.12); }
+.hosting-card-name { font-size:14px; font-weight:600; margin-bottom:6px; }
+.hosting-card-status {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:12px; padding:2px 10px; border-radius:12px;
+}
+.hosting-card-status.on { background:#ecfdf5; color:var(--success); }
+.hosting-card-status.off { background:#fef2f2; color:var(--danger); }
+.hosting-card-status .dot {
+  width:6px; height:6px; border-radius:50%; display:inline-block;
+}
+.hosting-card-status.on .dot { background:var(--success); }
+.hosting-card-status.off .dot { background:var(--danger); }
+
+/* ===== 优先级胶囊（可拖拽排序） ===== */
+.priority-list {
+  display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; min-height:36px;
+  align-items:center;
+}
+.priority-tag {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 14px; background:var(--accent-light); color:var(--accent);
+  border-radius:8px; font-size:13px; font-weight:500;
+  cursor:grab; user-select:none; transition:box-shadow .15s, transform .15s, opacity .15s;
+  border:2px solid transparent;
+}
+.priority-tag:active { cursor:grabbing; }
+.priority-tag.dragging { opacity:.35; transform:scale(.92); }
+.priority-tag.drag-target { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,110,247,.2); }
+.priority-tag .idx {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; border-radius:50%;
+  background:var(--accent); color:#fff; font-size:10px; font-weight:700; flex-shrink:0;
+}
+/* 拖拽插入指示线 */
+.pz-drop {
+  width:4px; height:32px; border-radius:3px; flex-shrink:0;
+  transition:width .18s ease, background .18s ease, border .18s ease;
+}
+.pz-drop.active {
+  width:32px; background:var(--accent-light);
+  border:2px dashed var(--accent);
+}
+.priority-hint { font-size:12px; color:var(--text2); }
+
+/* ===== 弹窗 ===== */
+.modal-overlay {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,.35); display:none;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(2px);
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--card); border-radius:16px;
+  width:520px; max-width:90vw; max-height:80vh;
+  display:flex; flex-direction:column;
+  box-shadow:0 8px 32px rgba(0,0,0,.18);
+}
+.modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 24px 16px; border-bottom:1px solid var(--border);
+}
+.modal-header-title { font-size:17px; font-weight:700; }
+.modal-close {
+  background:none; border:none; font-size:20px; color:var(--text2);
+  cursor:pointer; width:32px; height:32px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+}
+.modal-close:hover { background:var(--bg); }
+.modal-body {
+  padding:20px 24px; overflow-y:auto; flex:1;
+}
+.modal-footer {
+  display:flex; justify-content:flex-end; gap:8px;
+  padding:12px 24px 20px; border-top:1px solid var(--border);
+}
+
+/* ===== 弹窗内表单字段 ===== */
+.mfield { margin-bottom:18px; }
+.mfield:last-child { margin-bottom:0; }
+
+/* 标签/开关同行 */
+.mf-row {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+}
+.mf-row-left { flex:1; min-width:0; }
+.mf-label { font-size:13px; font-weight:600; color:var(--text); line-height:1.5; }
+.mf-label-inline { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; flex-shrink:0; }
+.mf-desc { font-size:12px; color:var(--text2); margin-top:4px; line-height:1.4; }
+.mf-tip { font-size:11px; color:var(--accent); margin-top:4px; }
+
+/* 输入框 */
+.mf-inp-full { width:100%; margin-top:6px; }
+.mf-inp-num { width:130px; flex-shrink:0; margin-left:auto; }
+
+/* 字段分隔线 */
+.mfield-divider { border:none; border-top:1px dashed var(--border); margin:16px 0 18px; }
+
+/* ===== 加载中 ===== */
+.loading { text-align:center; padding:60px 0; color:var(--text2); font-size:14px; }
+.spinner {
+  display:inline-block; width:32px; height:32px; border:3px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite;
+  margin-bottom:12px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+@media (max-width:700px) {
+  .content { padding:16px; }
+  .hosting-grid { grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
+  .modal { max-width:95vw; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-title">🖼 图床设置</span>
+  <div class="topbar-actions">
+    <span style="font-size:12px;color:var(--text2);margin-right:8px;" id="save-hint"></span>
+    <button class="btn btn-primary" onclick="saveAll()">保存全部</button>
+  </div>
+</div>
+
+<div class="content" id="app"><div class="loading"><div class="spinner"></div><div>加载中…</div></div></div>
+
+<!-- 图床设置弹窗 -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-header-title" id="modal-title">图床设置</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary btn-sm" id="modal-save" onclick="saveModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== 状态 ====================
+const API = "/" + (location.pathname.split("/")[1] || "qqbot-web") + "/api/imagebed-config"
+
+let state = {
+  settings: { priority: [], stats: { enabled: true, max_days: 30 }, apps: { test: true, stats: true } },
+  hostings: [],
+  meta: {},
+}
+let modalKey = null
+let modalFields = {}
+let dirty = false
+
+// ==================== 工具 ====================
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")
+}
+
+function toast(msg, isErr) {
+  const el = document.getElementById("toast")
+  el.textContent = msg
+  el.className = "toast show" + (isErr ? " error" : "")
+  clearTimeout(el._t)
+  el._t = setTimeout(() => el.className = "toast", 2500)
+}
+
+// ==================== 加载 ====================
+async function load() {
+  try {
+    const r = await fetch(API)
+    const d = await r.json()
+    if (!d.ok) { toast("加载失败: " + d.error, true); return }
+    state = d
+    dirty = false
+    render()
+  } catch(e) {
+    toast("请求失败: " + e.message, true)
+  }
+}
+
+// ==================== 保存 ====================
+async function saveAll() {
+  try {
+    let r = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "settings", settings: state.settings }),
+    })
+    let d = await r.json()
+    if (!d.ok) { toast("保存设置失败: " + d.error, true); return }
+    toast("全部保存成功")
+    dirty = false
+    document.getElementById("save-hint").textContent = ""
+  } catch(e) {
+    toast("保存失败: " + e.message, true)
+  }
+}
+
+async function saveHosting(key, fields) {
+  try {
+    const r = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "hosting", key, fields }),
+    })
+    const d = await r.json()
+    if (!d.ok) { toast("保存失败: " + d.error, true); return false }
+    const h = state.hostings.find(h => h.key === key)
+    if (h) {
+      Object.assign(h.fields, fields)
+      h.enabled = fields.enabled !== false
+    }
+    return true
+  } catch(e) {
+    toast("保存失败: " + e.message, true)
+    return false
+  }
+}
+
+// ==================== 弹窗 ====================
+function openModal(key) {
+  modalKey = key
+  const h = state.hostings.find(h => h.key === key)
+  const meta = state.meta[key]
+  if (!h || !meta) return
+  modalFields = { ...h.fields }
+
+  document.getElementById("modal-title").textContent = meta.name + " 设置"
+  const body = document.getElementById("modal-body")
+
+  let html = ""
+  for (const fi of meta.fields) {
+    const val = modalFields[fi.key] ?? ""
+    html += '<div class="mfield">'
+
+    if (fi.type === "bool") {
+      // 开关：左侧标签+描述，右侧开关
+      html += '<div class="mf-row">'
+      html += '<div class="mf-row-left">'
+      html += '<div class="mf-label">' + esc(fi.label) + '</div>'
+      if (fi.desc) html += '<div class="mf-desc">' + esc(fi.desc) + '</div>'
+      html += '</div>'
+      html += '<label class="pill-switch" style="margin-top:2px;">'
+      html += '<input type="checkbox" ' + (val ? "checked" : "") + ' onchange="modalFields[\'' + esc(fi.key) + '\']=this.checked;markDirty()">'
+      html += '<span class="slider"></span>'
+      html += '</label></div>'
+    } else if (fi.type === "select") {
+      // 自定义下拉：标签在左，下拉组件在右，描述在下
+      const selected = val || (fi.options && fi.options[0]) || ""
+      html += '<div class="mf-row" style="align-items:center;">'
+      html += '<span class="mf-label-inline">' + esc(fi.label) + '</span>'
+      html += '<div class="cusel" data-key="' + esc(fi.key) + '">'
+      html += '<div class="cusel-trigger" onclick="toggleCusel(event,this.parentElement)">'
+      html += '<span class="cusel-text">' + esc(selected) + '</span>'
+      html += '<span class="cusel-arrow">▼</span></div>'
+      html += '<div class="cusel-drop">'
+      for (const o of (fi.options || [])) {
+        html += '<div class="cusel-opt' + (selected === o ? " selected" : "") + '" data-val="' + esc(o) + '" onclick="selectOpt(event,this)">' + esc(o) + '</div>'
+      }
+      html += '</div></div></div>'
+      if (fi.desc) html += '<div class="mf-desc" style="margin-top:4px;">' + esc(fi.desc) + '</div>'
+    } else if (fi.type === "number") {
+      // 数字：标签在左，输入框在右，描述在下
+      html += '<div class="mf-row" style="align-items:center;">'
+      html += '<span class="mf-label-inline">' + esc(fi.label) + '</span>'
+      html += '<input class="inp inp-num" type="number" value="' + esc(val) + '" oninput="modalFields[\'' + esc(fi.key) + '\']=Number(this.value);markDirty()">'
+      html += '</div>'
+      if (fi.desc) html += '<div class="mf-desc" style="margin-top:4px;">' + esc(fi.desc) + '</div>'
+    } else {
+      // 文本/密码：标签在上，输入框全宽，描述在下
+      html += '<div class="mf-label">' + esc(fi.label) + '</div>'
+      const ph = fi.placeholder || ""
+      const tp = fi.secret ? "password" : "text"
+      html += '<input class="inp mf-inp-full" type="' + tp + '" value="' + esc(val) + '" placeholder="' + esc(ph) + '" oninput="modalFields[\'' + esc(fi.key) + '\']=this.value;markDirty()">'
+      if (fi.desc) html += '<div class="mf-desc">' + esc(fi.desc) + '</div>'
+    }
+    if (fi.tip) html += '<div class="mf-tip">' + esc(fi.tip) + '</div>'
+    html += '</div>'
+  }
+  body.innerHTML = html
+  document.getElementById("modal").classList.add("open")
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.remove("open")
+  modalKey = null
+  modalFields = {}
+}
+
+async function saveModal() {
+  if (!modalKey) return
+  const ok = await saveHosting(modalKey, modalFields)
+  if (ok) {
+    render()
+    closeModal()
+  }
+}
+
+function markDirty() {
+  document.getElementById("save-hint").textContent = "● 弹窗内有未保存的修改"
+}
+
+// ==================== 全局设置变更 ====================
+function updateSetting(path, value) {
+  const keys = path.split(".")
+  let obj = state.settings
+  for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]]
+  obj[keys[keys.length - 1]] = value
+  dirty = true
+}
+
+// ==================== 优先级拖拽排序 ====================
+let dragFromIdx = -1
+
+function initTagDrag(el, idx) {
+  el.setAttribute("draggable", "true")
+  el.addEventListener("dragstart", function(e) {
+    dragFromIdx = idx
+    this.classList.add("dragging")
+    e.dataTransfer.effectAllowed = "move"
+    e.dataTransfer.setData("text/plain", String(idx))
+  })
+  el.addEventListener("dragend", function() {
+    this.classList.remove("dragging")
+    dragFromIdx = -1
+    clearDragUI()
+  })
+  // 拖到另一个胶囊上 → 交换
+  el.addEventListener("dragover", function(e) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    if (!this.classList.contains("dragging")) {
+      this.classList.add("drag-target")
+    }
+  })
+  el.addEventListener("dragleave", function() {
+    this.classList.remove("drag-target")
+  })
+  el.addEventListener("drop", function(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    this.classList.remove("drag-target")
+    const toIdx = idx
+    if (dragFromIdx === toIdx || dragFromIdx < 0) return
+    const priority = state.settings.priority || []
+    // 交换两个位置
+    const tmp = priority[dragFromIdx]
+    priority[dragFromIdx] = priority[toIdx]
+    priority[toIdx] = tmp
+    state.settings.priority = priority
+    dirty = true
+    dragFromIdx = -1
+    clearDragUI()
+    renderPriorities()
+  })
+}
+
+function initDropZone(el, pos) {
+  el.addEventListener("dragover", function(e) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    this.classList.add("active")
+  })
+  el.addEventListener("dragleave", function() {
+    this.classList.remove("active")
+  })
+  el.addEventListener("drop", function(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    this.classList.remove("active")
+    if (dragFromIdx < 0) return
+    const priority = state.settings.priority || []
+    // 移除原位置
+    const [moved] = priority.splice(dragFromIdx, 1)
+    // 插入到目标间隙：如果来源在目标前，pos 需要 -1（因为已删除）
+    const insertAt = dragFromIdx < pos ? pos - 1 : pos
+    priority.splice(insertAt, 0, moved)
+    state.settings.priority = priority
+    dirty = true
+    dragFromIdx = -1
+    clearDragUI()
+    renderPriorities()
+  })
+}
+
+function clearDragUI() {
+  document.querySelectorAll(".priority-tag.drag-target").forEach(t => t.classList.remove("drag-target"))
+  document.querySelectorAll(".pz-drop.active").forEach(d => d.classList.remove("active"))
+}
+
+function renderPriorities() {
+  const list = document.querySelector(".priority-list")
+  if (!list) return
+  const priority = state.settings.priority || []
+
+  let html = '<span class="pz-drop" data-pos="0"></span>'
+  for (let i = 0; i < priority.length; i++) {
+    const key = priority[i]
+    const meta = state.meta[key]
+    html += '<span class="priority-tag" data-pidx="' + i + '">'
+    html += '<span class="idx">' + (i + 1) + '</span>' + esc(meta?.name || key)
+    html += '</span>'
+    html += '<span class="pz-drop" data-pos="' + (i + 1) + '"></span>'
+  }
+  if (priority.length === 0) {
+    html += '<span style="font-size:13px;color:var(--text2);">所有图床已列出，拖拽调整优先级</span>'
+  }
+  list.innerHTML = html
+
+  // 绑定胶囊拖拽事件
+  list.querySelectorAll(".priority-tag").forEach(el => {
+    initTagDrag(el, parseInt(el.dataset.pidx))
+  })
+  // 绑定间隙插入区域事件
+  list.querySelectorAll(".pz-drop").forEach(el => {
+    initDropZone(el, parseInt(el.dataset.pos))
+  })
+}
+
+// ==================== 渲染 ====================
+function render() {
+  const app = document.getElementById("app")
+
+  let html = ""
+
+  // ===== 基础设置 =====
+  html += '<div class="section">'
+  html += '<div class="section-title"><span class="icon">⚙</span>基础设置</div>'
+
+  // 上传统计
+  html += '<div class="form-row">'
+  html += '<div class="form-row-left"><div class="form-row-label">上传统计</div><div class="form-row-hint">在 Redis 中记录每次上传的文件大小、耗时、成功/失败</div></div>'
+  html += '<label class="pill-switch"><input type="checkbox" data-setting="stats.enabled" ' + (state.settings.stats?.enabled ? "checked" : "") + '><span class="slider"></span></label>'
+  html += '</div>'
+
+  html += '<div class="form-row">'
+  html += '<div class="form-row-left"><div class="form-row-label">统计保留天数</div><div class="form-row-hint">超过此天数的记录将被自动清理</div></div>'
+  html += '<input class="inp inp-num" type="number" data-setting="stats.max_days" value="' + esc(state.settings.stats?.max_days ?? 30) + '" min="1" max="365">'
+  html += '</div>'
+
+  html += '<div class="form-row">'
+  html += '<div class="form-row-left"><div class="form-row-label">#测试图床 命令</div><div class="form-row-hint">允许用户使用 #测试图床 命令测试各图床连通性</div></div>'
+  html += '<label class="pill-switch"><input type="checkbox" data-setting="apps.test" ' + (state.settings.apps?.test !== false ? "checked" : "") + '><span class="slider"></span></label>'
+  html += '</div>'
+
+  html += '<div class="form-row">'
+  html += '<div class="form-row-left"><div class="form-row-label">#图床状态 命令</div><div class="form-row-hint">允许用户使用 #图床状态 / #图床失败原因 等命令</div></div>'
+  html += '<label class="pill-switch"><input type="checkbox" data-setting="apps.stats" ' + (state.settings.apps?.stats !== false ? "checked" : "") + '><span class="slider"></span></label>'
+  html += '</div>'
+
+  // ===== 优先级拖拽区 =====
+  html += '<div style="margin-top:16px;">'
+  html += '<div class="form-row-label" style="margin-bottom:8px;">图床上传优先级</div>'
+  html += '<div class="priority-list" id="priority-list"></div>'
+  html += '<div class="priority-hint">拖拽胶囊调整优先级，靠前者优先使用。调整后点击上方"保存全部"生效。</div>'
+  html += '</div>'
+
+  html += '</div>'
+
+  // ===== 图床列表 =====
+  html += '<div class="section">'
+  html += '<div class="section-title"><span class="icon">🖼</span>图床列表</div>'
+  html += '<div class="section-desc">点击卡片可查看和修改对应图床的详细配置</div>'
+  html += '<div class="hosting-grid">'
+
+  for (const h of state.hostings) {
+    const meta = state.meta[h.key]
+    const name = meta?.name || h.key
+    const on = h.enabled
+    html += '<div class="hosting-card" onclick="openModal(\'' + esc(h.key) + '\')">'
+    html += '<div class="hosting-card-name">' + esc(name) + '</div>'
+    html += '<span class="hosting-card-status ' + (on ? "on" : "off") + '">'
+    html += '<span class="dot"></span>' + (on ? "已启用" : "已禁用")
+    html += '</span></div>'
+  }
+
+  html += '</div></div>'
+
+  app.innerHTML = html
+
+  // 渲染优先级胶囊
+  renderPriorities()
+  // 绑定全局设置事件
+  bindEvents()
+}
+
+function bindEvents() {
+  document.querySelectorAll("[data-setting]").forEach(el => {
+    if (el.type === "checkbox") {
+      el.addEventListener("change", function() {
+        updateSetting(this.dataset.setting, this.checked)
+      })
+    } else {
+      el.addEventListener("input", function() {
+        updateSetting(this.dataset.setting, this.type === "number" ? Number(this.value) : this.value)
+      })
+    }
+  })
+}
+
+// ===== 弹窗遮罩点击关闭 =====
+document.getElementById("modal").addEventListener("click", function(e) {
+  if (e.target === this) closeModal()
+})
+
+// ===== 自定义下拉组件 =====
+function toggleCusel(e, el) {
+  e.stopPropagation()
+  const wasOpen = el.classList.contains("open")
+  // 关闭所有其他下拉
+  document.querySelectorAll(".cusel.open").forEach(c => c.classList.remove("open"))
+  if (!wasOpen) el.classList.add("open")
+}
+
+function selectOpt(e, opt) {
+  e.stopPropagation()
+  const cusel = opt.closest(".cusel")
+  const key = cusel.dataset.key
+  const val = opt.dataset.val
+  // 更新状态
+  modalFields[key] = val
+  markDirty()
+  // 更新 UI
+  cusel.querySelector(".cusel-text").textContent = val
+  cusel.querySelectorAll(".cusel-opt").forEach(o => o.classList.remove("selected"))
+  opt.classList.add("selected")
+  cusel.classList.remove("open")
+}
+
+// 点击页面任意位置关闭下拉
+document.addEventListener("click", function() {
+  document.querySelectorAll(".cusel.open").forEach(c => c.classList.remove("open"))
+})
+
+// ===== 启动 =====
+load()
+</script>
+</body>
+</html>

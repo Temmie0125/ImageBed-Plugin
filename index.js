@@ -21,7 +21,7 @@ import { QqbotHosting } from './lib/qqbot.js'
 import { HomeworkHosting } from './lib/homework.js'
 import { TxcHosting } from './lib/txc.js'
 import { KurobbsHosting } from './lib/kurobbs.js'
-import { loadSettings } from './lib/base.js'
+import { loadSettings, ensurePriority } from './lib/base.js'
 import { TestHosting } from './apps/testHosting.js'
 import { HostingStats } from './apps/stats.js'
 
@@ -76,6 +76,9 @@ apps:
     stats: { enabled: true, max_days: 30 },
     apps: { test: true, stats: true },
   }, settingsTemplate)
+
+  // 补全优先级中缺失的图床（插件更新后新加入的图床自动追加到末尾）
+  ensurePriority(hostCfg, Object.keys(HOSTING_MAP), logger)
   Bot._hostingCfg = hostCfg
   Bot._hostingSettings = hostCfg
 
