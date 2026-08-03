@@ -47,6 +47,18 @@ function updateYaml(filePath, updates) {
   fs.writeFileSync(filePath, doc.toString(), "utf8")
 }
 
+// ==================== 敏感字段遮蔽 ====================
+
+const MASKED = "••••••••"
+
+function maskSecret(val) {
+  return (val && String(val).trim()) ? MASKED : ""
+}
+
+function isMasked(val) {
+  return String(val) === MASKED
+}
+
 // ==================== 图床字段元数据 ====================
 
 const HOSTING_META = {
@@ -177,11 +189,17 @@ export function init(ctx) {
       const settings = loadYaml(path.join(configDir, "settings.yaml"))
       const hostings = Object.entries(HOSTING_META).map(([key, meta]) => {
         const cfg = loadYaml(path.join(configDir, `${key}.yaml`))
+        // 遮蔽敏感字段，防止 token/secret 等通过 API 泄露
+        const fields = {}
+        for (const fi of meta.fields) {
+          const raw = cfg[fi.key] ?? ""
+          fields[fi.key] = fi.secret ? maskSecret(raw) : raw
+        }
         return {
           key,
           name: meta.name,
           enabled: cfg.enabled !== false,
-          fields: cfg,
+          fields,
         }
       })
 
@@ -210,8 +228,16 @@ export function init(ctx) {
       }
 
       if (type === "hosting" && key && HOSTING_META[key]) {
+        // 过滤掉未修改的敏感字段（值为遮蔽占位符），防止掩码值覆盖真实密钥
+        const cleaned = { ...fields }
+        const meta = HOSTING_META[key]
+        for (const fi of meta.fields) {
+          if (fi.secret && isMasked(cleaned[fi.key])) {
+            delete cleaned[fi.key]
+          }
+        }
         // 保存图床配置（保留注释）
-        updateYaml(path.join(configDir, `${key}.yaml`), fields)
+        updateYaml(path.join(configDir, `${key}.yaml`), cleaned)
         // 清除实例缓存，下次访问 config 时自动重新加载
         const inst = Bot.getHosting?.(key)
         if (inst) inst._config = undefined

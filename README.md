@@ -2,6 +2,8 @@
 
 Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式的图片/文件上传服务，支持自动 fallback、统计记录与 Web 可视化管理。
 
+如果使用了我的[🔗cnb图床](https://gitee.com/wind-trace-typ/cnb-image-bed)这个插件，那么请先找到Yunzai/plugins/example/cnb图床.js并删除，再安装本插件使用（本插件已经含有cnb图床，该插件为早期版本容易和本插件冲突）
+
 ## 功能特性
 
 - **多图床优先级链**：按配置的优先级顺序依次尝试上报，失败自动切换下一个
