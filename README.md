@@ -34,13 +34,16 @@ Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式�
 
 ### 安装
 
-将插件放入 Yunzai 的 `plugins/` 目录：
+在Yunzai根目录执行以下指令拉取插件：
 
 ```bash
-cd plugins
-git clone <repo-url> ImageBed-Plugin
-cd ImageBed-Plugin
-pnpm install
+git clone https://gitee.com/wind-trace-typ/ImageBed-Plugin.git ./plugins/ImageBed-Plugin
+```
+
+然后在执行以下指令安装依赖：
+
+```bash
+pnpm i
 ```
 
 ### 配置
