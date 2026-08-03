@@ -1,0 +1,11 @@
+{
+  "name": "ImageBed-Plugin",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "图床服务插件",
+  "dependencies": {
+    "cos-nodejs-sdk-v5": "^2.15.4",
+    "file-type": "^22.0.1",
+    "image-size": "^2.0.2"
+  }
+}
