@@ -82,6 +82,8 @@ const url = await Bot.imageToUrl(imageBuffer, { imagebed: 'cnb' })
 const url = await Bot.imageToUrl(imageBuffer)
 ```
 
+若是使用此版本[🔗QQBot-Plugin](https://gitee.com/wind-trace-typ/Yunzai-QQBot-Plugin)qqbot适配器，适配器会自动调用此图床插件转换图片url做markdown图片
+
 ## 命令一览
 
 > 所有命令仅限 **master** 权限用户，且受 `apps.test` / `apps.stats` 开关控制。
