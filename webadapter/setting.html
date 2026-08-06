@@ -85,7 +85,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .inp-num { width:120px; }
 
 /* ===== 自定义下拉选择 ===== */
-.cusel { position:relative; width:130px; flex-shrink:0; margin-left:auto; }
+.cusel { position:relative; width:auto; min-width:130px; flex-shrink:0; margin-left:auto; }
+.cusel-text { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* 测试图床弹窗：宽屏固定长度右对齐，窄屏缩短换行不溢出 */
+#test-modal .mf-row { flex-wrap:wrap; gap:8px 12px; align-items:center; }
+#test-modal .cusel { width:220px; max-width:100%; margin-left:auto; }
+#test-modal .cusel-text { white-space:normal; word-break:break-all; overflow:visible; text-overflow:clip; }
+#test-modal .cusel-opt { white-space:normal; word-break:break-all; }
+#test-modal .cusel-trigger { height:36px; font-size:14px; }
+#test-modal .inp-num { height:36px; width:220px; max-width:100%; font-size:14px; }
 .cusel-trigger {
   display:flex; align-items:center; justify-content:space-between; gap:6px;
   width:100%; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:8px;
@@ -271,6 +279,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   <span class="topbar-title">🖼 图床设置</span>
   <div class="topbar-actions">
     <span style="font-size:12px;color:var(--text2);margin-right:8px;" id="save-hint"></span>
+    <button class="btn btn-ghost" onclick="openTestModal()">测试图床</button>
     <button class="btn btn-primary" onclick="saveAll()">保存全部</button>
   </div>
 </div>
@@ -288,6 +297,56 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal()">取消</button>
       <button class="btn btn-primary btn-sm" id="modal-save" onclick="saveModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 测试图床弹窗 -->
+<div class="modal-overlay" id="test-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-header-title">测试图床</span>
+      <button class="modal-close" onclick="closeTestModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="mfield">
+        <div class="mf-row" style="align-items:center;">
+          <span class="mf-label-inline">测试图片大小</span>
+          <div class="cusel" id="test-size-sel" data-key="size_mb">
+            <div class="cusel-trigger" onclick="toggleCusel(event,this.parentElement)">
+              <span class="cusel-text">5MB</span>
+              <span class="cusel-arrow">▼</span>
+            </div>
+            <div class="cusel-drop" id="test-size-drop"></div>
+          </div>
+        </div>
+        <div class="mf-desc" style="margin-top:4px;">生成对应大小的随机测试图片，上传到已开启图床并显示结果</div>
+      </div>
+      <div class="mfield">
+        <div class="mf-row" style="align-items:center;">
+          <span class="mf-label-inline">测试图床</span>
+          <div class="cusel" id="test-hosting-sel" data-key="hosting">
+            <div class="cusel-trigger" onclick="toggleCusel(event,this.parentElement)">
+              <span class="cusel-text">全部已开启图床</span>
+              <span class="cusel-arrow">▼</span>
+            </div>
+            <div class="cusel-drop" id="test-hosting-drop"></div>
+          </div>
+        </div>
+        <div class="mf-desc" style="margin-top:4px;">选择要测试的图床，默认测试所有已开启图床</div>
+      </div>
+      <div class="mfield">
+        <div class="mf-row" style="align-items:center;">
+          <span class="mf-label-inline">自动删除(秒)</span>
+          <input id="test-autodelete" class="inp inp-num" type="number" value="120" min="0" max="864000" style="width:130px;">
+        </div>
+        <div class="mf-desc" style="margin-top:4px;">上传后多少秒自动删除对象，0 表示不自动删除（默认 120）</div>
+      </div>
+      <div id="test-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeTestModal()">关闭</button>
+      <button class="btn btn-primary btn-sm" id="test-start" onclick="startTest()">确定</button>
     </div>
   </div>
 </div>
@@ -688,6 +747,143 @@ function selectOpt(e, opt) {
 document.addEventListener("click", function() {
   document.querySelectorAll(".cusel.open").forEach(c => c.classList.remove("open"))
 })
+
+// ==================== 测试图床 ====================
+let testSizeMb = 5
+
+function initTestSizeOptions() {
+  const drop = document.getElementById("test-size-drop")
+  if (!drop) return
+  const opts = [5,10,15,20,25,30,35,40,45,50]
+  drop.innerHTML = opts.map(o =>
+    '<div class="cusel-opt' + (o === testSizeMb ? " selected" : "") + '" data-val="' + o + '" data-unit="MB">' + o + 'MB</div>'
+  ).join("")
+  drop.querySelectorAll(".cusel-opt").forEach(el => {
+    el.addEventListener("click", function(e) {
+      e.stopPropagation()
+      testSizeMb = Number(this.dataset.val)
+      const sel = document.getElementById("test-size-sel")
+      sel.querySelector(".cusel-text").textContent = testSizeMb + "MB"
+      sel.querySelectorAll(".cusel-opt").forEach(o => o.classList.remove("selected"))
+      this.classList.add("selected")
+      sel.classList.remove("open")
+    })
+  })
+}
+
+function openTestModal() {
+  initTestSizeOptions()
+  initTestHostingOptions()
+  document.getElementById("test-result").innerHTML = ""
+  document.getElementById("test-modal").classList.add("open")
+}
+
+function initTestHostingOptions() {
+  const sel = document.getElementById("test-hosting-sel")
+  if (!sel) return
+  const enabled = (state.hostings || []).filter(h => h.enabled)
+  const drop = document.getElementById("test-hosting-drop")
+  const opts = [{ key: "all", name: "全部已开启图床 (" + enabled.length + ")" }]
+    .concat(enabled.map(h => ({ key: h.key, name: h.name })))
+  drop.innerHTML = opts.map(o =>
+    '<div class="cusel-opt' + (o.key === "all" ? " selected" : "") + '" data-val="' + esc(o.key) + '">' + esc(o.name) + '</div>'
+  ).join("")
+  // 重置显示文本为默认全部
+  sel.querySelector(".cusel-text").textContent = "全部已开启图床 (" + enabled.length + ")"
+  drop.querySelectorAll(".cusel-opt").forEach(el => {
+    el.addEventListener("click", function(e) {
+      e.stopPropagation()
+      const selEl = document.getElementById("test-hosting-sel")
+      selEl.querySelector(".cusel-text").textContent = this.textContent
+      selEl.querySelectorAll(".cusel-opt").forEach(o => o.classList.remove("selected"))
+      this.classList.add("selected")
+      selEl.classList.remove("open")
+    })
+  })
+}
+
+function getTestHosting() {
+  const sel = document.getElementById("test-hosting-sel")
+  const opt = sel?.querySelector(".cusel-opt.selected")
+  return opt ? opt.dataset.val : "all"
+}
+
+function closeTestModal() {
+  document.getElementById("test-modal").classList.remove("open")
+}
+
+// 测试弹窗遮罩点击关闭
+document.getElementById("test-modal").addEventListener("click", function(e) {
+  if (e.target === this) closeTestModal()
+})
+
+function formatTestMs(ms) { return ms < 1000 ? `${ms}ms` : `${(ms/1000).toFixed(2)}s` }
+function formatTestBytes(b) {
+  if (b <= 0) return "0 B"
+  const u = ["B","KB","MB","GB"]
+  const i = Math.floor(Math.log(b)/Math.log(1024))
+  return `${(b/Math.pow(1024,i)).toFixed(i===0?0:2)} ${u[i]}`
+}
+
+async function startTest() {
+  const btn = document.getElementById("test-start")
+  const box = document.getElementById("test-result")
+  btn.disabled = true
+  btn.textContent = "测试中…"
+  box.innerHTML = '<div class="loading"><div class="spinner"></div><div>正在测试图床，请稍候…（大图/多图床可能耗时较长，请勿关闭弹窗）</div></div>'
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 300000)
+    const r = await fetch(API.replace("/api/imagebed-config", "/api/imagebed-test"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        size_mb: testSizeMb,
+        hosting: getTestHosting(),
+        auto_delete: Number(document.getElementById("test-autodelete")?.value) || 0,
+      }),
+    })
+    clearTimeout(timer)
+    const d = await r.json()
+    if (!d.ok) {
+      box.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:13px;">❌ ' + esc(d.error) + '</div>'
+      return
+    }
+    let html = '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;">测试文件: ' + formatTestBytes(d.size) + ' · 共 ' + d.results.length + ' 个图床</div>'
+    html += '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    html += '<thead><tr style="background:#f9fafb;color:var(--text2);">'
+    html += '<th style="text-align:left;padding:8px 10px;">图床</th>'
+    html += '<th style="text-align:center;padding:8px 10px;">状态</th>'
+    html += '<th style="text-align:right;padding:8px 10px;">耗时</th>'
+    html += '<th style="text-align:left;padding:8px 10px;">链接/说明</th></tr></thead><tbody>'
+    for (const r2 of d.results) {
+      const statusColor = r2.success ? "var(--success)" : "var(--danger)"
+      const statusText = r2.success ? "✅ 成功" : "❌ 失败"
+      const note = r2.success
+        ? ('<a href="' + esc(r2.url) + '" target="_blank" style="color:var(--accent);word-break:break-all;">' + esc(r2.url.length > 60 ? r2.url.slice(0,60)+"…" : r2.url) + '</a>')
+        : ('<span style="color:var(--danger);">' + esc(r2.error || "") + '</span>')
+      html += '<tr style="border-top:1px solid var(--border);">'
+      html += '<td style="padding:8px 10px;font-weight:600;">' + esc(r2.name) + '</td>'
+      html += '<td style="padding:8px 10px;text-align:center;color:' + statusColor + ';">' + statusText + '</td>'
+      html += '<td style="padding:8px 10px;text-align:right;white-space:nowrap;">' + formatTestMs(r2.cost) + '</td>'
+      html += '<td style="padding:8px 10px;word-break:break-all;">' + note + '</td>'
+      html += '</tr>'
+    }
+    html += '</tbody></table></div>'
+    const ok = d.results.filter(r => r.success).length
+    html += '<div style="font-size:12px;color:var(--text2);margin-top:8px;">成功 ' + ok + ' 个，失败 ' + (d.results.length - ok) + ' 个</div>'
+    box.innerHTML = html
+  } catch(e) {
+    const msg = e.name === "AbortError" ? "请求超时（>300秒），请调小图片大小或减少图床数量后重试" : ("请求失败: " + e.message)
+    box.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:13px;">❌ ' + esc(msg) + '</div>'
+  } finally {
+    btn.disabled = false
+    btn.textContent = "确定"
+  }
+}
+
 
 // ===== 启动 =====
 load()

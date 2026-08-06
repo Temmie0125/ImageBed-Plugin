@@ -2,12 +2,9 @@
  * #测试图床 - 对所有已开启的图床进行上传测试
  */
 
-import fs from 'fs'
 import zlib from 'zlib'
-import path from 'path'
 import plugin from '../../../lib/plugins/plugin.js'
 
-const TEST_IMG_PATH = path.resolve(import.meta.dirname, '../temp/test_5mb.png')
 let _testing = false
 
 function formatMs(ms) { return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s` }
@@ -18,21 +15,12 @@ function formatBytes(b) {
   return `${(b / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${u[i]}`
 }
 
-/** 生成 ~5MB PNG 测试图片 (纯 Node.js, 无需 canvas) */
-function generateTestPng(w = 1700, h = 1000) {
-  const bpp = 3
-  const raw = Buffer.alloc(w * h * bpp + h)
-  for (let y = 0; y < h; y++) {
-    const rowOff = y * (w * bpp + 1)
-    raw[rowOff] = 0 // filter byte
-    for (let x = 0; x < w; x++) {
-      const off = rowOff + 1 + x * bpp
-      const v = (Math.random() * 256) | 0
-      raw[off] = v
-      raw[off + 1] = (v * 0.7 + 60) | 0
-      raw[off + 2] = (v * 0.5 + 100) | 0
-    }
-  }
+/** 生成精确约 sizeMb MB 的测试 PNG（纯 Node，无需 canvas）。
+ *  先估算像素生成基础图，再用 level:0 (不压缩) 让 raw 体积≈PNG 体积，循环逼近目标体积 */
+function generateTestPng(sizeMb = 5) {
+  const targetBytes = Math.floor(sizeMb * 1024 * 1024)
+  const w = 2000
+  let h = Math.max(1, Math.floor((targetBytes - 60) / (w * 3 + 1)))
 
   const crcTable = new Uint32Array(256)
   for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; crcTable[n] = c }
@@ -43,20 +31,36 @@ function generateTestPng(w = 1700, h = 1000) {
     const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(Buffer.concat([tbuf, data])))
     return Buffer.concat([len, tbuf, data, crc])
   }
-
   const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0
+  const build = (height) => {
+    const bpp = 3
+    const raw = Buffer.alloc(w * height * bpp + height)
+    for (let y = 0; y < height; y++) {
+      const rowOff = y * (w * bpp + 1)
+      raw[rowOff] = 0
+      for (let x = 0; x < w; x++) {
+        const off = rowOff + 1 + x * bpp
+        const v = (Math.random() * 256) | 0
+        raw[off] = v
+        raw[off + 1] = (v * 0.7 + 60) | 0
+        raw[off + 2] = (v * 0.5 + 100) | 0
+      }
+    }
+    const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(height, 4); ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0
+    const deflated = zlib.deflateSync(raw, { level: 0 })
+    return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', deflated), chunk('IEND', Buffer.alloc(0))])
+  }
 
-  const deflated = zlib.deflateSync(raw, { level: 1 })
-  return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', deflated), chunk('IEND', Buffer.alloc(0))])
-}
-
-function ensureTestImage() {
-  if (fs.existsSync(TEST_IMG_PATH)) return TEST_IMG_PATH
-  const buf = generateTestPng()
-  fs.writeFileSync(TEST_IMG_PATH, buf)
-  logger.info(`[图床测试] 已生成测试图片: ${TEST_IMG_PATH} (${formatBytes(buf.length)})`)
-  return TEST_IMG_PATH
+  let buf = build(h)
+  let guard = 0
+  while (Math.abs(buf.length - targetBytes) > targetBytes * 0.01 && guard++ < 50) {
+    const diff = targetBytes - buf.length
+    if (diff > 0) h += Math.max(1, Math.floor(diff / (w * 3 + 1)))
+    else h += Math.min(-1, Math.ceil(diff / (w * 3 + 1)))
+    if (h < 1) h = 1
+    buf = build(h)
+  }
+  return buf
 }
 
 export class TestHosting extends plugin {
@@ -67,7 +71,7 @@ export class TestHosting extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#测试图床$', fnc: 'testHosting', permission: 'master' },
+        { reg: '^#测试图床(\\d+)?$', fnc: 'testHosting', permission: 'master' },
         { reg: '^#图床$', fnc: 'testWithImage', permission: 'master' },
       ],
     })
@@ -79,14 +83,19 @@ export class TestHosting extends plugin {
     if (_testing) { await this.reply('⏳ 测试正在进行中，请稍后再试'); return }
     _testing = true
     try {
+      // 解析 #测试图床N 中的 N (MB)，缺省 5MB，仅允许 1~50 整数
+      const m = this.e.msg.match(/^#测试图床(\d+)?$/)
+      let sizeMb = m && m[1] ? Number(m[1]) : 5
+      sizeMb = Math.min(Math.max(sizeMb, 1), 50)
+
       let testBuf
       try {
-        testBuf = fs.readFileSync(ensureTestImage())
+        testBuf = generateTestPng(sizeMb)
       } catch (e) {
-        await this.reply(`❌ 无法加载测试图片: ${e.message}`)
+        await this.reply(`❌ 无法生成测试图片: ${e.message}`)
         return
       }
-      await this._runTest(testBuf, 'test_image.jpg')
+      await this._runTest(testBuf, `test_${sizeMb}mb.jpg`)
     } finally { _testing = false }
   }
 
