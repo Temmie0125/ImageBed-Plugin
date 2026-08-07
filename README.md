@@ -108,13 +108,6 @@ const url = await Bot.imageToUrl(imageBuffer)
 - 当前可以配合[🔗qqbot-web-adapter插件](https://gitee.com/wind-trace-typ/QQBot-Web-Adapter)直接在网页端快捷设置，具体参考下图：
 ![alt text](./webadapter/webadapter.png)
 
-## QQBot 分片上传
-
-- 支持 `image` / `video` / `voice` 三种文件类型
-- 最大支持 **200MB** 文件
-- 使用官方 QQ 机器人 SDK 分片上传流程
-- 需配置 `bot_qq`、`target_type`（group/user）、`target_openid`、`file_type`（auto/image/video/voice）
-
 ## 依赖
 
 | 依赖 | 用途 |
@@ -198,7 +191,7 @@ const image = await this.makeBotImage(buffer) || { url: typeof Bot.imageToUrl ==
 
 ## QQ频道图床配置方法
 
-- - 打开Yunzai日志，然后选中一个Bot有主动消息权限的文字子频道，艾特这个Yunzai上挂载的官机发送一条信息，然后在日志中找到该记录，如下图：
+- 打开Yunzai日志，然后选中一个Bot有主动消息权限的文字子频道，艾特这个Yunzai上挂载的官机发送一条信息，然后在日志中找到该记录，如下图：
 ![alt text](./webadapter/qqchannel.png)
 其中第一个红框为`Bot QQ`，第二个红框为`channel_id`，将其填入配置文件即可
 
