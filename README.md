@@ -181,7 +181,7 @@ const image = await this.makeBotImage(buffer) || { url: typeof Bot.imageToUrl ==
 ## QQBot分片上传配置方法
 
 - 打开Yunzai日志，然后在群里艾特这个Yunzai上挂载的官机发送一条信息，然后在日志中找到该记录，如下图：
-![alt text](./webadapter/log.png)
+![alt text](./webadapter/qq.png)
 其中第一个红框为`Bot QQ`，第二个红框为`目标群openid`，第三个红框为`目标用户openid`，将如果选中目标类型为`user`,那么在配置文件中填入`Bot QQ`和`目标用户openid`，如果选中目标类型为`group`,那么在配置文件中填入`Bot QQ`和`目标群openid`，然后在`文件类型`中填入`auto`即可
 
 ## B站图床配置方法
