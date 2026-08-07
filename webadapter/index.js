@@ -105,7 +105,7 @@ const HOSTING_META = {
     ],
   },
   nature: {
-    name: "Nature",
+    name: "王者图床",
     fields: [
       { key: "enabled", type: "bool", label: "启用", desc: "开启后该图床将在上传时被候选（无需额外配置）" },
     ],
@@ -257,48 +257,93 @@ export function init(ctx) {
   })
 
   /**
-   * POST /imagebed-test — 网页端测试图床：生成指定大小测试图并上传已开启图床
-   * body: { size_mb: 5, hosting: "all" | "cos" | "cnb" | ... }
+   * 测试任务内存存储 (进程内)，避免长连接被反向代理超时切断
+   * taskId -> { status, size, total, done, results, error }
+   */
+  const testTasks = new Map()
+  const genTaskId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+
+  /**
+   * POST /imagebed-test — 网页端测试图床：立即返回 taskId，后台异步执行上传测试
+   * body: { size_mb: 5, hosting: "all" | "cos" | "cnb" | ..., auto_delete: 0 }
    */
   ctx.registerApi("post", "/imagebed-test", async (req, res) => {
-    try {
-      let sizeMb = Number(req.body?.size_mb) || 5
-      sizeMb = Math.min(Math.max(sizeMb, 1), 50)
-      const hostingKey = typeof req.body?.hosting === 'string' ? req.body.hosting : 'all'
-      let autoDelete = Number(req.body?.auto_delete)
-      autoDelete = Number.isFinite(autoDelete) && autoDelete > 0 ? Math.floor(autoDelete) : 0
+    let sizeMb = Number(req.body?.size_mb) || 5
+    sizeMb = Math.min(Math.max(sizeMb, 1), 50)
+    const hostingKey = typeof req.body?.hosting === 'string' ? req.body.hosting : 'all'
+    let autoDelete = Number(req.body?.auto_delete)
+    autoDelete = Number.isFinite(autoDelete) && autoDelete > 0 ? Math.floor(autoDelete) : 0
 
-      const testBuf = generateTestPng(sizeMb)
-      let hostings = (Bot._hostings || []).filter(h => h.enabled)
-      if (hostingKey && hostingKey !== 'all') {
-        hostings = hostings.filter(h => h.configKey === hostingKey)
-      }
-      if (hostings.length === 0) {
-        return res.json({ ok: false, error: "没有已开启的图床" })
-      }
-
-      // 串行上传 (避免并发占用带宽影响测速准确性)
-      const results = []
-      for (const h of hostings) {
-        const start = Date.now()
-        const r = { name: h.name, key: h.configKey, size: testBuf.length }
-        try {
-          const opts = autoDelete > 0 ? { autoDelete } : {}
-          r.url = await h.uploadWithStats(testBuf, `test_${sizeMb}mb.png`, opts)
-          r.cost = Date.now() - start
-          r.success = true
-        } catch (e) {
-          r.cost = Date.now() - start
-          r.success = false
-          r.error = e.message?.slice(0, 200) || "未知错误"
-        }
-        results.push(r)
-      }
-      results.sort((a, b) => (b.success - a.success) || (a.cost - b.cost))
-      res.json({ ok: true, size: testBuf.length, results })
-    } catch (e) {
-      res.json({ ok: false, error: e.message })
+    let hostings = (Bot._hostings || []).filter(h => h.enabled)
+    if (hostingKey && hostingKey !== 'all') {
+      hostings = hostings.filter(h => h.configKey === hostingKey)
     }
+    if (hostings.length === 0) {
+      return res.json({ ok: false, error: "没有已开启的图床" })
+    }
+
+    const taskId = genTaskId()
+    const task = {
+      status: "running",
+      size: 0,
+      total: hostings.length,
+      done: 0,
+      results: [],
+      error: null,
+    }
+    testTasks.set(taskId, task)
+
+    // 后台异步执行，立即返回 taskId
+    ;(async () => {
+      try {
+        const testBuf = generateTestPng(sizeMb)
+        task.size = testBuf.length
+        // 串行上传 (避免并发占用带宽影响测速准确性)
+        for (const h of hostings) {
+          const start = Date.now()
+          const r = { name: h.name, key: h.configKey, size: testBuf.length }
+          try {
+            const opts = autoDelete > 0 ? { autoDelete } : {}
+            r.url = await h.uploadWithStats(testBuf, `test_${sizeMb}mb.png`, opts)
+            r.cost = Date.now() - start
+            r.success = true
+          } catch (e) {
+            r.cost = Date.now() - start
+            r.success = false
+            r.error = e.message?.slice(0, 200) || "未知错误"
+          }
+          task.results.push(r)
+          task.done++
+        }
+        task.results.sort((a, b) => (b.success - a.success) || (a.cost - b.cost))
+        task.status = "done"
+      } catch (e) {
+        task.status = "error"
+        task.error = e.message
+      }
+      // 1 小时后自动清理
+      setTimeout(() => testTasks.delete(taskId), 3600 * 1000)
+    })().catch(() => {})
+
+    res.json({ ok: true, taskId })
+  })
+
+  /**
+   * GET /imagebed-test-status?task=xxx — 轮询测试任务进度与结果
+   */
+  ctx.registerApi("get", "/imagebed-test-status", (req, res) => {
+    const taskId = req.query?.task
+    const task = taskId && testTasks.get(taskId)
+    if (!task) return res.json({ ok: false, error: "任务不存在或已过期" })
+    res.json({
+      ok: true,
+      status: task.status,
+      size: task.size,
+      total: task.total,
+      done: task.done,
+      results: task.status === "done" ? task.results : [],
+      error: task.error,
+    })
   })
 }
 

@@ -276,7 +276,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 <body>
 
 <div class="topbar">
-  <span class="topbar-title">🖼 图床设置</span>
+  <span class="topbar-title">图床设置</span>
   <div class="topbar-actions">
     <span style="font-size:12px;color:var(--text2);margin-right:8px;" id="save-hint"></span>
     <button class="btn btn-ghost" onclick="openTestModal()">测试图床</button>
@@ -675,7 +675,7 @@ function render() {
 
   // ===== 图床列表 =====
   html += '<div class="section">'
-  html += '<div class="section-title"><span class="icon">🖼</span>图床列表</div>'
+  html += '<div class="section-title"><span class="icon">⚙</span>图床列表</div>'
   html += '<div class="section-desc">点击卡片可查看和修改对应图床的详细配置</div>'
   html += '<div class="hosting-grid">'
 
@@ -830,58 +830,104 @@ async function startTest() {
   const box = document.getElementById("test-result")
   btn.disabled = true
   btn.textContent = "测试中…"
-  box.innerHTML = '<div class="loading"><div class="spinner"></div><div>正在测试图床，请稍候…（大图/多图床可能耗时较长，请勿关闭弹窗）</div></div>'
+
+  // 1) 提交任务，立即拿到 taskId（不占用长连接）
+  let taskId
   try {
-    const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), 300000)
     const r = await fetch(API.replace("/api/imagebed-config", "/api/imagebed-test"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      signal: ctrl.signal,
       body: JSON.stringify({
         size_mb: testSizeMb,
         hosting: getTestHosting(),
         auto_delete: Number(document.getElementById("test-autodelete")?.value) || 0,
       }),
     })
-    clearTimeout(timer)
     const d = await r.json()
     if (!d.ok) {
       box.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:13px;">❌ ' + esc(d.error) + '</div>'
+      btn.disabled = false; btn.textContent = "确定"
       return
     }
-    let html = '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;">测试文件: ' + formatTestBytes(d.size) + ' · 共 ' + d.results.length + ' 个图床</div>'
-    html += '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
-    html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
-    html += '<thead><tr style="background:#f9fafb;color:var(--text2);">'
-    html += '<th style="text-align:left;padding:8px 10px;">图床</th>'
-    html += '<th style="text-align:center;padding:8px 10px;">状态</th>'
-    html += '<th style="text-align:right;padding:8px 10px;">耗时</th>'
-    html += '<th style="text-align:left;padding:8px 10px;">链接/说明</th></tr></thead><tbody>'
-    for (const r2 of d.results) {
-      const statusColor = r2.success ? "var(--success)" : "var(--danger)"
-      const statusText = r2.success ? "✅ 成功" : "❌ 失败"
-      const note = r2.success
-        ? ('<a href="' + esc(r2.url) + '" target="_blank" style="color:var(--accent);word-break:break-all;">' + esc(r2.url.length > 60 ? r2.url.slice(0,60)+"…" : r2.url) + '</a>')
-        : ('<span style="color:var(--danger);">' + esc(r2.error || "") + '</span>')
-      html += '<tr style="border-top:1px solid var(--border);">'
-      html += '<td style="padding:8px 10px;font-weight:600;">' + esc(r2.name) + '</td>'
-      html += '<td style="padding:8px 10px;text-align:center;color:' + statusColor + ';">' + statusText + '</td>'
-      html += '<td style="padding:8px 10px;text-align:right;white-space:nowrap;">' + formatTestMs(r2.cost) + '</td>'
-      html += '<td style="padding:8px 10px;word-break:break-all;">' + note + '</td>'
-      html += '</tr>'
-    }
-    html += '</tbody></table></div>'
-    const ok = d.results.filter(r => r.success).length
-    html += '<div style="font-size:12px;color:var(--text2);margin-top:8px;">成功 ' + ok + ' 个，失败 ' + (d.results.length - ok) + ' 个</div>'
-    box.innerHTML = html
+    taskId = d.taskId
   } catch(e) {
-    const msg = e.name === "AbortError" ? "请求超时（>300秒），请调小图片大小或减少图床数量后重试" : ("请求失败: " + e.message)
-    box.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:13px;">❌ ' + esc(msg) + '</div>'
-  } finally {
-    btn.disabled = false
-    btn.textContent = "确定"
+    box.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:13px;">❌ 提交失败: ' + esc(e.message) + '</div>'
+    btn.disabled = false; btn.textContent = "确定"
+    return
   }
+
+  // 2) 轮询任务状态，避免被反向代理超时切断
+  const statusUrl = API.replace("/api/imagebed-config", "/api/imagebed-test-status") + "?task=" + encodeURIComponent(taskId)
+  let lastDone = -1
+  const poll = async () => {
+    try {
+      const resp = await fetch(statusUrl)
+      const d = await resp.json()
+      if (!d.ok) {
+        box.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:13px;">❌ ' + esc(d.error) + '</div>'
+        btn.disabled = false; btn.textContent = "确定"
+        return
+      }
+      // 进度提示 (已完成数量变化时刷新)
+      if (d.status === "running" || d.status === "error") {
+        const done = d.done || 0
+        const total = d.total || 0
+        if (done !== lastDone) {
+          lastDone = done
+          box.innerHTML = '<div class="loading"><div class="spinner"></div><div>正在测试图床，请稍候…（' + done + '/' + total + ' 已完成，大图/多图床可能耗时较长）</div></div>'
+        }
+        if (d.status === "error") {
+          box.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:13px;">❌ ' + esc(d.error || "测试失败") + '</div>'
+          btn.disabled = false; btn.textContent = "确定"
+          return
+        }
+        setTimeout(poll, 1500)
+        return
+      }
+      // done：渲染结果
+      renderTestResult(d)
+    } catch(e) {
+      box.innerHTML = '<div style="padding:16px;color:var(--danger);font-size:13px;">❌ 轮询失败: ' + esc(e.message) + '</div>'
+      btn.disabled = false; btn.textContent = "确定"
+    }
+  }
+  poll()
+}
+
+function renderTestResult(d) {
+  const box = document.getElementById("test-result")
+  const btn = document.getElementById("test-start")
+  if (!d.results || d.results.length === 0) {
+    box.innerHTML = '<div style="padding:16px;color:var(--text2);font-size:13px;">无测试结果</div>'
+    btn.disabled = false; btn.textContent = "确定"
+    return
+  }
+  let html = '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;">测试文件: ' + formatTestBytes(d.size) + ' · 共 ' + d.results.length + ' 个图床</div>'
+  html += '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
+  html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+  html += '<thead><tr style="background:#f9fafb;color:var(--text2);">'
+  html += '<th style="text-align:left;padding:8px 10px;">图床</th>'
+  html += '<th style="text-align:center;padding:8px 10px;">状态</th>'
+  html += '<th style="text-align:right;padding:8px 10px;">耗时</th>'
+  html += '<th style="text-align:left;padding:8px 10px;">链接/说明</th></tr></thead><tbody>'
+  for (const r2 of d.results) {
+    const statusColor = r2.success ? "var(--success)" : "var(--danger)"
+    const statusText = r2.success ? "✅ 成功" : "❌ 失败"
+    const note = r2.success
+      ? ('<a href="' + esc(r2.url) + '" target="_blank" style="color:var(--accent);word-break:break-all;">' + esc(r2.url.length > 60 ? r2.url.slice(0,60)+"…" : r2.url) + '</a>')
+      : ('<span style="color:var(--danger);">' + esc(r2.error || "") + '</span>')
+    html += '<tr style="border-top:1px solid var(--border);">'
+    html += '<td style="padding:8px 10px;font-weight:600;">' + esc(r2.name) + '</td>'
+    html += '<td style="padding:8px 10px;text-align:center;color:' + statusColor + ';">' + statusText + '</td>'
+    html += '<td style="padding:8px 10px;text-align:right;white-space:nowrap;">' + formatTestMs(r2.cost) + '</td>'
+    html += '<td style="padding:8px 10px;word-break:break-all;">' + note + '</td>'
+    html += '</tr>'
+  }
+  html += '</tbody></table></div>'
+  const ok = d.results.filter(r => r.success).length
+  html += '<div style="font-size:12px;color:var(--text2);margin-top:8px;">成功 ' + ok + ' 个，失败 ' + (d.results.length - ok) + ' 个</div>'
+  box.innerHTML = html
+  btn.disabled = false; btn.textContent = "确定"
 }
 
 
