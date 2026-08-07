@@ -136,7 +136,7 @@ apps:
           return url
         }
       } catch (e) {
-        logger.debug(`[${h.name}] 失败 (${Date.now() - t0}ms): ${e.message}`)
+        logger.error(`[${h.name}] 失败 (${Date.now() - t0}ms): ${e.message}`)
       }
     }
     logger.warn('[图床] 全部失败，使用本地存储')
