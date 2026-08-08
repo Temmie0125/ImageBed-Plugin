@@ -171,6 +171,8 @@ const HOSTING_META = {
       { key: "target_type", type: "select", label: "目标类型", options: ["group", "user"], desc: "上传目标类型，group 表示群聊，user 表示私聊" },
       { key: "target_openid", type: "text", label: "目标 OpenID", desc: "上传目标群或用户的 OpenID，用于接收分片文件" },
       { key: "file_type", type: "select", label: "文件类型", options: ["auto", "image", "video", "voice"], desc: "分片上传的文件类型，auto 表示自动识别" },
+      { key: "internal", type: "bool", label: "内网上传", desc: "开启后将加速域名替换为广州地域域名提速(服务器需在广州地域)，Host 保留原加速域名通过预签名校验" },
+      { key: "chunk_parallel", type: "number", label: "分片并发数", desc: "分片上传并发连接数，内网可调大提速，公网酌情调小避免被限速 (默认 5)" },
     ],
   },
 }
