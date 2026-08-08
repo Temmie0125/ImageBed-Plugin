@@ -471,7 +471,9 @@ function openModal(key) {
       html += '<span class="cusel-arrow">▼</span></div>'
       html += '<div class="cusel-drop">'
       for (const o of (fi.options || [])) {
-        html += '<div class="cusel-opt' + (selected === o ? " selected" : "") + '" data-val="' + esc(o) + '" onclick="selectOpt(event,this)">' + esc(o) + '</div>'
+        const oVal = typeof o === 'object' ? o.value : o
+        const oLabel = typeof o === 'object' ? o.label : o
+        html += '<div class="cusel-opt' + (selected === oVal ? " selected" : "") + '" data-val="' + esc(oVal) + '" data-label="' + esc(oLabel) + '" onclick="selectOpt(event,this)">' + esc(oLabel) + '</div>'
       }
       html += '</div></div></div>'
       if (fi.desc) html += '<div class="mf-desc" style="margin-top:4px;">' + esc(fi.desc) + '</div>'
@@ -737,7 +739,7 @@ function selectOpt(e, opt) {
   modalFields[key] = val
   markDirty()
   // 更新 UI
-  cusel.querySelector(".cusel-text").textContent = val
+  cusel.querySelector(".cusel-text").textContent = opt.dataset.label || val
   cusel.querySelectorAll(".cusel-opt").forEach(o => o.classList.remove("selected"))
   opt.classList.add("selected")
   cusel.classList.remove("open")
@@ -754,7 +756,7 @@ let testSizeMb = 5
 function initTestSizeOptions() {
   const drop = document.getElementById("test-size-drop")
   if (!drop) return
-  const opts = [5,10,15,20,25,30,35,40,45,50]
+  const opts = [1,5,10,15,20,25,30,35,40,45,50,100,150,200]
   drop.innerHTML = opts.map(o =>
     '<div class="cusel-opt' + (o === testSizeMb ? " selected" : "") + '" data-val="' + o + '" data-unit="MB">' + o + 'MB</div>'
   ).join("")
