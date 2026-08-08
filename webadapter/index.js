@@ -70,6 +70,13 @@ const HOSTING_META = {
       { key: "token", type: "text", label: "Token", placeholder: "库街区登录Token", secret: true, desc: "库街区网页端登录后获取的 access_token" },
     ],
   },
+  cliim: {
+    name: "CliIm",
+    fields: [
+      { key: "enabled", type: "bool", label: "启用", desc: "开启后该图床将在上传时被候选（无需额外配置）" },
+      { key: "timeout", type: "number", label: "上传超时(毫秒)", desc: "上传请求超时时间，默认 30000" },
+    ],
+  },
   txc: {
     name: "兔小巢",
     fields: [

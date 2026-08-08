@@ -21,6 +21,7 @@ import { QqbotHosting } from './lib/qqbot.js'
 import { HomeworkHosting } from './lib/homework.js'
 import { TxcHosting } from './lib/txc.js'
 import { KurobbsHosting } from './lib/kurobbs.js'
+import { CliImHosting } from './lib/cliim.js'
 import { loadSettings, ensurePriority } from './lib/base.js'
 import { TestHosting } from './apps/testHosting.js'
 import { HostingStats } from './apps/stats.js'
@@ -41,6 +42,7 @@ const HOSTING_MAP = {
   homework: HomeworkHosting,
   txc: TxcHosting,
   kurobbs: KurobbsHosting,
+  cliim: CliImHosting,
 }
 
 // ==================== 初始化 ====================
