@@ -31,7 +31,7 @@ Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式�
 | B 站 | `bilibili` | 图床 | Cookie | 需要获取bilibili token |
 | QQ 频道 | `qq_channel` | QQ 频道 | bot_qq + channel_id | 需要获取频道id，上传速度一般，需要发送主动消息 |
 | 兔小巢 | `txc` | 兔小巢 | cookie | 暂不可用 |
-| CliIm | `cliim` | 免费图床 | 无 | cli.im 免费图床，无需任何配置，返回链接为杭州oss |
+| CliIm | `cliim` | 免费图床 | 无 | cli.im 免费图床，无需任何配置，返回链接为杭州oss，速度还不错，推荐备用 |
 
 ## 快速开始
 
