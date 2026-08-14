@@ -109,6 +109,7 @@ const HOSTING_META = {
       { key: "autodelete", type: "number", label: "自动删除(秒)", desc: "上传多少秒后自动删除文件，设为 0 则不自动删除" },
       { key: "recordurl", type: "bool", label: "记录 URL 缓存", desc: "将已上传成功的文件 URL 缓存下来，避免重复上传相同文件" },
       { key: "cache_expire_days", type: "number", label: "缓存过期天数", desc: "URL 缓存的有效天数，过期后重新上传" },
+      { key: "checkUrlAlive", type: "bool", label: "校验链接连通性", desc: "读取缓存时先访问链接校验是否仍然可访问，已失效则自动删除缓存并重新上传（关闭可加快读取速度）" },
     ],
   },
   nature: {
