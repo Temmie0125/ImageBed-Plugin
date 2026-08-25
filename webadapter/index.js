@@ -70,6 +70,17 @@ const HOSTING_META = {
       { key: "token", type: "text", label: "Token", placeholder: "库街区登录Token", secret: true, desc: "库街区网页端登录后获取的 access_token" },
     ],
   },
+  miyoushe: {
+    name: "米游社",
+    fields: [
+      { key: "enabled", type: "bool", label: "启用", desc: "开启后该图床将在上传时被候选" },
+      { key: "cookieMode", type: "select", label: "Cookie模式", options: [
+        { value: "fixed", label: "固定 Cookie" },
+        { value: "auto", label: "自动获取 Cookie" },
+      ], desc: "fixed=使用下方固定 Cookie；auto=自动读取 Yunzai 存储的米游社 CK，无需手动抓包（auto模式需安装 genshin 或 miao-plugin）" },
+      { key: "cookie", type: "text", label: "米游社 Cookie", secret: true, desc: "米游社 Cookie（cookieMode=fixed 时生效）：如果机器人有扫码登录米游社功能，可以尝试发送 /我的ck，如果有返回 ck 可以填入此处，也可以通过手动抓包获取 Cookie", showIf: { key: "cookieMode", equals: "fixed" } },
+    ],
+  },
   cliim: {
     name: "CliIm",
     fields: [

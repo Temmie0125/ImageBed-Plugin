@@ -447,7 +447,11 @@ function openModal(key) {
   let html = ""
   for (const fi of meta.fields) {
     const val = modalFields[fi.key] ?? ""
-    html += '<div class="mfield">'
+    // showIf：仅当依赖字段等于指定值时才显示该字段
+    const sif = fi.showIf
+      ? ' data-showif-key="' + esc(fi.showIf.key) + '" data-showif-val="' + esc(fi.showIf.equals) + '"'
+      : ""
+    html += '<div class="mfield"' + sif + '>'
 
     if (fi.type === "bool") {
       // 开关：左侧标签+描述，右侧开关
@@ -496,7 +500,18 @@ function openModal(key) {
     html += '</div>'
   }
   body.innerHTML = html
+  applyShowIf()
   document.getElementById("modal").classList.add("open")
+}
+
+// 根据 showIf 依赖字段的值，控制字段显示/隐藏
+function applyShowIf() {
+  document.querySelectorAll("#modal-body .mfield[data-showif-key]").forEach(el => {
+    const depKey = el.dataset.showifKey
+    const depVal = el.dataset.showifVal
+    const cur = modalFields[depKey]
+    el.style.display = (String(cur) === String(depVal)) ? "" : "none"
+  })
 }
 
 function closeModal() {
@@ -743,6 +758,7 @@ function selectOpt(e, opt) {
   cusel.querySelectorAll(".cusel-opt").forEach(o => o.classList.remove("selected"))
   opt.classList.add("selected")
   cusel.classList.remove("open")
+  applyShowIf()
 }
 
 // 点击页面任意位置关闭下拉
