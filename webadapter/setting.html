@@ -359,7 +359,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 const API = "/" + (location.pathname.split("/")[1] || "qqbot-web") + "/api/imagebed-config"
 
 let state = {
-  settings: { priority: [], stats: { enabled: true, max_days: 30 }, apps: { test: true, stats: true } },
+  settings: { priority: [], stats: { enabled: true, max_days: 30 }, apps: { test: true, stats: true, task: true } },
   hostings: [],
   meta: {},
 }
@@ -679,6 +679,11 @@ function render() {
   html += '<div class="form-row">'
   html += '<div class="form-row-left"><div class="form-row-label">#图床状态 命令</div><div class="form-row-hint">允许用户使用 #图床状态 / #图床失败原因 等命令</div></div>'
   html += '<label class="pill-switch"><input type="checkbox" data-setting="apps.stats" ' + (state.settings.apps?.stats !== false ? "checked" : "") + '><span class="slider"></span></label>'
+  html += '</div>'
+
+  html += '<div class="form-row">'
+  html += '<div class="form-row-left"><div class="form-row-label">定时清理任务</div><div class="form-row-hint">每日定时清理各图床过期缓存与远端失效文件（apps/task.js）</div></div>'
+  html += '<label class="pill-switch"><input type="checkbox" data-setting="apps.task" ' + (state.settings.apps?.task !== false ? "checked" : "") + '><span class="slider"></span></label>'
   html += '</div>'
 
   // ===== 优先级拖拽区 =====

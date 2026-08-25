@@ -23,6 +23,7 @@ import { TxcHosting } from './lib/txc.js'
 import { KurobbsHosting } from './lib/kurobbs.js'
 import { MiyousheHosting } from './lib/miyoushe.js'
 import { CliImHosting } from './lib/cliim.js'
+import { PicGoHosting } from './lib/picgo.js'
 import { loadSettings, ensurePriority } from './lib/base.js'
 import { TestHosting } from './apps/testHosting.js'
 import { HostingStats } from './apps/stats.js'
@@ -45,6 +46,7 @@ const HOSTING_MAP = {
   kurobbs: KurobbsHosting,
   miyoushe: MiyousheHosting,
   cliim: CliImHosting,
+  picgo: PicGoHosting,
 }
 
 // ==================== 初始化 ====================
@@ -73,6 +75,8 @@ apps:
   test: true
   # #图床状态 / #图床失败原因 / #清空CNB图床
   stats: true
+  # 每日定时清理各图床过期缓存与远端文件 (apps/task.js)
+  task: true
 `
 
   const hostCfg = loadSettings({
@@ -147,14 +151,6 @@ apps:
     return Bot.fileToUrl({ buffer: fileBuf, name }, { name, time: 5 * 60000 })
   }
 
-  // CNB 缓存定时清理 (每3小时)
-  try {
-    const schedule = (await import('node-schedule')).default
-    schedule.scheduleJob('0 */3 * * *', async () => {
-      const cnb = instances.find(h => h.configKey === 'cnb')
-      if (cnb?.enabled && cnb.cleanExpiredCache) await cnb.cleanExpiredCache()
-    })
-  } catch { /* 无 node-schedule 则跳过 */ }
 
   _initialized = true
   const names = instances.filter(h => h.enabled).map(h => h.name).join(', ')

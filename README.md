@@ -14,7 +14,7 @@ Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式�
 - **自动配置补全**：新增图床自动追加到优先级末尾，缺失字段自动补写
 - **Cookie 自动获取**：QQ 空间 / QQ 群作业图床无需手动填写 Cookie
 
-## 支持图床（15个）
+## 支持图床（16个）
 
 | 图床 | configKey | 类型 | 需要配置 | 说明 |
 |------|-----------|------|----------|------|
@@ -33,6 +33,7 @@ Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式�
 | QQ 频道 | `qq_channel` | QQ 频道 | bot_qq + channel_id | 需要获取频道id，上传速度一般，需要发送主动消息 |
 | 兔小巢 | `txc` | 兔小巢 | cookie | 暂不可用 |
 | CliIm | `cliim` | 免费图床 | 无 | cli.im 免费图床，无需任何配置，返回链接为杭州oss，速度还不错，推荐备用 |
+| PicGo | `picgo` | 免费图床 | API 密钥 | www.picgo.net，基于 chevereto 的免费图床，标准 V1 API 上传，单文件 25MB 上限，速度较慢，可上传文件；支持自动删除、URL 缓存去重 |
 
 ## 快速开始
 
@@ -196,6 +197,10 @@ const image = await this.makeBotImage(buffer) || { url: typeof Bot.imageToUrl ==
 - 打开Yunzai日志，然后选中一个Bot有主动消息权限的文字子频道，艾特这个Yunzai上挂载的官机发送一条信息，然后在日志中找到该记录，如下图：
 ![alt text](./webadapter/qqchannel.png)
 其中第一个红框为`Bot QQ`，第二个红框为`channel_id`，将其填入配置文件即可
+
+## picgo图床配置方法
+
+- 打开[picgo](https://www.picgo.net/),然后注册登录，然后点击右上角头像，点击设置，找到`API 密钥`，复制出来，然后填入配置文件即可
 
 ## 问题反馈
 

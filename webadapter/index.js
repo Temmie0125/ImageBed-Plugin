@@ -81,6 +81,16 @@ const HOSTING_META = {
       { key: "cookie", type: "text", label: "米游社 Cookie", secret: true, desc: "米游社 Cookie（cookieMode=fixed 时生效）：如果机器人有扫码登录米游社功能，可以尝试发送 /我的ck，如果有返回 ck 可以填入此处，也可以通过手动抓包获取 Cookie", showIf: { key: "cookieMode", equals: "fixed" } },
     ],
   },
+  picgo: {
+    name: "PicGo",
+    fields: [
+      { key: "enabled", type: "bool", label: "启用", desc: "开启后该图床将在上传时被候选" },
+      { key: "key", type: "text", label: "API密钥", secret: true, desc: "在https://www.picgo.net/登录，然后点击右上角头像->设置->API 获取的密钥" },
+      { key: "autodelete", type: "number", label: "自动删除(秒)", desc: "自动删除时间(秒)，上传时作为服务端 expiration 有效期，到期由图床自动清理远端文件（跨重启生效）；不记录 URL 时生效" },
+      { key: "recordurl", type: "bool", label: "记录 URL 缓存", desc: "将已上传成功的文件 URL 缓存下来，避免重复上传相同文件" },
+      { key: "cache_expire_days", type: "number", label: "缓存过期天数", desc: "URL 缓存的有效天数，过期后自动清理远端文件与缓存记录" },
+    ],
+  },
   cliim: {
     name: "CliIm",
     fields: [
