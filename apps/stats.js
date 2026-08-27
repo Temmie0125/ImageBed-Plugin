@@ -210,10 +210,19 @@ export class HostingStats extends plugin {
     }
   }
 
+  /** #清空CNB图床 执行锁，防止重复触发反复请求 */
+  _clearingCnb = false
+
   /** #清空CNB图床 */
   async clearCnbAssets() {
     if (Bot._hostingSettings?.apps?.stats === false) return
     if (this.e.adapter_id !== 'QQBot') return
+
+    // 加锁：避免多次触发导致并发清空请求
+    if (this._clearingCnb) {
+      await this.reply('⏳ 清空任务正在进行中，请稍候再试')
+      return
+    }
 
     const cnbHosting = Bot.getHosting('cnb')
     if (!cnbHosting) {
@@ -229,25 +238,31 @@ export class HostingStats extends plugin {
       return
     }
 
-    await this.reply('🗑️ 正在清空 CNB 仓库的所有资源，请稍候...')
-
-    let result
+    this._clearingCnb = true
     try {
-      result = await cnbHosting.clearAllAssets()
-    } catch (e) {
-      await this.reply(`❌ 清空失败: ${e.message}`)
-      return
-    }
+      await this.reply('🗑️ 正在清空 CNB 仓库的所有资源，请稍候...')
 
-    const msg = [
-      '✅ CNB 图床清空完成',
-      `> 远端删除: ${result.deleted} 个`,
-      `> 删除失败: ${result.failed} 个`,
-      `> 缓存清理: ${result.cacheCleared} 条`,
-      ``,
-      `总计已清理 ${result.deleted} 个远端资源 + ${result.cacheCleared} 条本地缓存`,
-    ].join('\r')
-    await this.reply(msg)
+      let result
+      try {
+        result = await cnbHosting.clearAllAssets()
+      } catch (e) {
+        await this.reply(`❌ 清空失败: ${e.message}`)
+        return
+      }
+
+      const msg = [
+        '✅ CNB 图床清空完成',
+        `> 远端删除: ${result.deleted} 个`,
+        `> 删除失败: ${result.failed} 个`,
+        `> 缓存清理: ${result.cacheCleared} 条`,
+        ``,
+        `总计已清理 ${result.deleted} 个远端资源 + ${result.cacheCleared} 条本地缓存`,
+      ].join('\r')
+      await this.reply(msg)
+    } finally {
+      // 释放执行锁，无论成功或失败都允许下次触发
+      this._clearingCnb = false
+    }
   }
 
   /** 获取 CNB 存储占用 (仅当查询单个 cnb 图床时) */
