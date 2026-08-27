@@ -14,6 +14,9 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { getStats, getFailReasons, toInt, formatBytes, formatMs, speedLevel, percent } from '../lib/base.js'
 
+// #清空CNB图床 执行锁 (模块级，跨机器人/跨实例共享，与 #测试图床 一致)
+let moduleClearingCnb = false
+
 const btn = segment.button([
   { text: '图床状态', callback: '图床状态' },
   { text: '图床状态7天', callback: '图床状态7天' },
@@ -210,19 +213,17 @@ export class HostingStats extends plugin {
     }
   }
 
-  /** #清空CNB图床 执行锁，防止重复触发反复请求 */
-  _clearingCnb = false
-
   /** #清空CNB图床 */
   async clearCnbAssets() {
     if (Bot._hostingSettings?.apps?.stats === false) return
     if (this.e.adapter_id !== 'QQBot') return
 
-    // 加锁：避免多次触发导致并发清空请求
-    if (this._clearingCnb) {
+    // 加锁：模块级布尔锁 (跨机器人/跨实例共享，与 #测试图床 一致)
+    if (moduleClearingCnb) {
       await this.reply('⏳ 清空任务正在进行中，请稍候再试')
       return
     }
+    moduleClearingCnb = true
 
     const cnbHosting = Bot.getHosting('cnb')
     if (!cnbHosting) {
@@ -238,7 +239,6 @@ export class HostingStats extends plugin {
       return
     }
 
-    this._clearingCnb = true
     try {
       await this.reply('🗑️ 正在清空 CNB 仓库的所有资源，请稍候...')
 
@@ -270,8 +270,8 @@ export class HostingStats extends plugin {
         }
       }
     } finally {
-      // 释放执行锁，无论成功或失败都允许下次触发
-      this._clearingCnb = false
+      // 释放锁 (模块级布尔，与 #测试图床 一致)
+      moduleClearingCnb = false
     }
   }
 
