@@ -258,7 +258,17 @@ export class HostingStats extends plugin {
         ``,
         `总计已清理 ${result.deleted} 个远端资源 + ${result.cacheCleared} 条本地缓存`,
       ].join('\r')
-      await this.reply(msg)
+      try {
+        await this.reply(msg)
+      } catch (err) {
+        logger.error(err)
+        try {
+          Bot.sendGroupMsg(this.e.self_id, this.e.group_id, msg)
+        } catch (error) {
+          logger.error(error)
+          Bot.sendPrivateMsg(this.e.self_id, this.e.user_id, msg)
+        }
+      }
     } finally {
       // 释放执行锁，无论成功或失败都允许下次触发
       this._clearingCnb = false
