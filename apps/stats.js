@@ -239,6 +239,17 @@ export class HostingStats extends plugin {
       return
     }
 
+    // 权限预检：无 repo-manage:rw 权限直接返回，不再发起任何删除请求
+    try {
+      await cnbHosting.checkPermission()
+    } catch (e) {
+      if (e?.code === 'FORBIDDEN') {
+        await this.reply(`❌ ${e.message}`)
+        return
+      }
+      // 其它异常不阻断，交由正式流程处理
+    }
+
     try {
       await this.reply('🗑️ 正在清空 CNB 仓库的所有资源，请稍候...')
 
