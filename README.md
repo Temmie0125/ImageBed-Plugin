@@ -22,7 +22,7 @@ Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式�
 | 库街区 | `kurobbs` | 论坛图床 | token | 上传速度较快，但需要注册拿到token |
 | 米游社 | `miyoushe` | 社区 OSS 图床 | Cookie | 登录 Cookie 换取阿里云 OSS 直传凭证，返回官方图床直链，单文件约 20MB 上限；`cookieMode` 支持 `fixed`（固定 Cookie）或 `auto`（自动读取 Yunzai 已绑定的米游社 CK） |
 | Nature | `nature` | COS 直传 | 无（内置密钥） | 上传速度较快，但有一定上传大小限制 |
-| QQBot 分片上传 | `qqbot` | 官方机器人 | bot_qq + target_openid | 使用QQBot分片上传文件，支持图片、视频、语音，上传文件限制200MB以内，腾讯云服务器在可选地域内可用内网传输，速度还可以，可做备用，其他地域或其他云服务器非内网比较慢 |
+| QQBot 分片上传 | `qqbot` | 官方机器人 | bot_qq + target_openid | 使用QQBot分片上传文件，支持图片、视频、语音，上传文件限制200MB以内，如果是腾讯云服务器强推，可支持内网传输，上传速度夯爆了（文件时效一小时） |
 | QQ 空间 | `qzone` | QQ 空间相册 | 无（Cookie 自动获取） | 需要连接野鸡获取cookie，上传速度一般 |
 | QQ 群作业 | `homework` | QQ 群作业 | 无（Cookie 自动获取） | 需要连接野鸡获取cookie，上传速度一般 |
 | ChatGLM | `chatglm` | 免费图床 | 无 | 上传速度较快，但有一定上传大小限制 |
@@ -186,6 +186,9 @@ const image = await this.makeBotImage(buffer) || { url: typeof Bot.imageToUrl ==
 - 打开Yunzai日志，然后在群里艾特这个Yunzai上挂载的官机发送一条信息，然后在日志中找到该记录，如下图：
 ![alt text](./webadapter/qq.png)
 其中第一个红框为`Bot QQ`，第二个红框为`目标群openid`，第三个红框为`目标用户openid`，将如果选中目标类型为`user`,那么在配置文件中填入`Bot QQ`和`目标用户openid`，如果选中目标类型为`group`,那么在配置文件中填入`Bot QQ`和`目标群openid`，然后在`文件类型`中填入`auto`即可
+
+- 如果是腾讯云服务器，强烈建议开启以下设置
+![alt text](./webadapter/qqbotsetting.png)
 
 ## B站图床配置方法
 
