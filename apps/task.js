@@ -13,8 +13,6 @@
  * 图床自身的清理窗口由各自 config 中的 cache_expire_days 控制。
  */
 
-import plugin from '../../../lib/plugins/plugin.js'
-
 export class HostingTask extends plugin {
   constructor() {
     super({
@@ -28,9 +26,16 @@ export class HostingTask extends plugin {
           // 每天凌晨 4:00 执行 (Yunzai cron: 秒 分 时 日 月 周)
           name: '图床过期缓存清理',
           cron: '0 0 4 * * ?',
-          fnc: 'cleanExpiredCache',
+          fnc: () => this.cleanExpiredCache(),
           log: true,
         },
+        {
+          // 每10分钟检查并准备qqbot分片上传缓存链接
+          name: '分片上传预上传缓存准备',
+          cron: '0 0/10 * * * ?',
+          fnc: () => this.checkPrepareCache(),
+          log: true,
+        }
       ],
     })
   }
@@ -58,6 +63,19 @@ export class HostingTask extends plugin {
 
     if (totalCleaned > 0) {
       logger.mark(`[图床定时清理] 共清理 ${totalCleaned} 个过期资源 (${details.join(', ')})`)
+    }
+  }
+  async checkPrepareCache() {
+    if (Bot._hostingSettings?.apps?.task === false) return
+    try {
+      const h = Bot.getHosting?.('qqbot')
+      if (!h?.enabled) return
+      const cacheNum = await h.checkPrepareCache()
+      if (cacheNum) {
+        logger.mark(`[分片预上传缓存准备] 分片上传预上传缓存准备完成(${cacheNum}个)`)
+      }
+    } catch (e) {
+      logger.error(`[分片预上传缓存准备] 失败: ${e?.message || e}`)
     }
   }
 }

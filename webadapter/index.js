@@ -200,7 +200,7 @@ const HOSTING_META = {
       { key: "target_type", type: "select", label: "目标类型", options: ["group", "user"], desc: "上传目标类型，group 表示群聊，user 表示私聊" },
       { key: "target_openid", type: "text", label: "目标 OpenID", desc: "上传目标群或用户的 OpenID，用于接收分片文件" },
       { key: "file_type", type: "select", label: "文件类型", options: ["auto", "image", "video", "voice"], desc: "分片上传的文件类型，auto 表示自动识别" },
-      { key: "internal", type: "bool", label: "内网上传", desc: "开启后将加速域名替换为指定地域域名提速，Host 保留原加速域名通过预签名校验" },
+      { key: "internal", type: "bool", label: "内网上传", desc: "开启后将加速域名替换为指定地域域名提速，Host 保留原加速域名通过预签名校验，腾讯云服务器强烈建议开启并将region设置为服务器相同地域" },
       { key: "region", type: "select", label: "内网地域", options: [
         { value: "ap-guangzhou", label: "广州 (ap-guangzhou)" },
         { value: "ap-shanghai", label: "上海 (ap-shanghai)" },
@@ -222,6 +222,10 @@ const HOSTING_META = {
         { value: "eu-frankfurt", label: "法兰克福/欧洲 (eu-frankfurt)" },
       ], desc: "内网模式目标地域，仅开启\"内网上传\"后才生效；服务器需与该地域同地域内网/低延迟才能提速" },
       { key: "chunk_parallel", type: "number", label: "分片并发数", desc: "分片上传并发连接数，内网可调大提速，公网酌情调小避免被限速 (默认 10)" },
+      { key: "use_prepare", type: "bool", label: "使用预上传", desc: "开启后先预热占位图获取上传链接，上传时直接复用该链接 PUT 内容覆盖，省去 upload_prepare、upload_part_finish、file 接口以提速" },
+      { key: "prepare_cache_count", type: "number", label: "预上传缓存数量", desc: "维持的预上传链接缓存条数 (默认 20)，仅在开启\"使用预上传\"后生效" },
+      { key: "reuse_prepare", type: "bool", label: "复用预上传链接", desc: "上传完成后将用过的预上传链接延迟放回缓存池重复利用，仅在开启\"使用预上传\"后生效" },
+      { key: "reuse_wait", type: "number", label: "复用等待时间(秒)", desc: "复用链接放回缓存池前的等待秒数 (默认 30)，等待期间避免刚上传的文件被覆盖，仅在开启\"复用预上传链接\"后生效" },
     ],
   },
 }
@@ -320,7 +324,7 @@ export function init(ctx) {
    */
   ctx.registerApi("post", "/imagebed-test", async (req, res) => {
     let sizeMb = Number(req.body?.size_mb) || 5
-    sizeMb = Math.min(Math.max(sizeMb, 1), 50)
+    sizeMb = Math.min(Math.max(sizeMb, 1), 200)
     const hostingKey = typeof req.body?.hosting === 'string' ? req.body.hosting : 'all'
     let autoDelete = Number(req.body?.auto_delete)
     autoDelete = Number.isFinite(autoDelete) && autoDelete > 0 ? Math.floor(autoDelete) : 0

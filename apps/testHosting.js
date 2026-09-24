@@ -83,10 +83,10 @@ export class TestHosting extends plugin {
     if (_testing) { await this.reply('⏳ 测试正在进行中，请稍后再试'); return }
     _testing = true
     try {
-      // 解析 #测试图床N 中的 N (MB)，缺省 5MB，仅允许 1~50 整数
+      // 解析 #测试图床N 中的 N (MB)，缺省 5MB，仅允许 1~200 整数
       const m = this.e.msg.match(/^#测试图床(\d+)?$/)
       let sizeMb = m && m[1] ? Number(m[1]) : 5
-      sizeMb = Math.min(Math.max(sizeMb, 1), 50)
+      sizeMb = Math.min(Math.max(sizeMb, 1), 200)
 
       let testBuf
       try {

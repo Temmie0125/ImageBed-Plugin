@@ -27,6 +27,7 @@ import { PicGoHosting } from './lib/picgo.js'
 import { loadSettings, ensurePriority } from './lib/base.js'
 import { TestHosting } from './apps/testHosting.js'
 import { HostingStats } from './apps/stats.js'
+import { HostingTask } from './apps/task.js'
 
 // ==================== 图床注册表 ====================
 
@@ -166,6 +167,7 @@ apps:
 Bot.getHosting = (key) => (Bot._hostings || []).find(h => h.configKey === key)
 
 
+
 // ==================== 导出 apps (Yunzai 加载器约定) ====================
 
-export const apps = { TestHosting, HostingStats }
+export const apps = { TestHosting, HostingStats, HostingTask }
