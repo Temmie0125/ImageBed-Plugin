@@ -145,6 +145,7 @@ export class TestHosting extends plugin {
     for (const h of enabled) {
       const start = Date.now()
       const result = { name: h.name, key: h.configKey, size: testBuf.length }
+      logger.info(`正在测试[${h.name}]图床`)
       try {
         // CNB 测试时传 autoDelete:120 跳过缓存，120秒后自动删除
         const opts = h.configKey === 'cnb' ? { autoDelete: 120 } : {}
@@ -173,7 +174,7 @@ export class TestHosting extends plugin {
       const cost = formatMs(r.cost)
       const note = r.success
         ? (r.url || '').replace(/\|/g, '\\|')
-        : r.error?.replace(/\|/g, '\\|') || ''
+        : r.error?.replace(/\|/g, '\\|').replace(/\n/g,'\\n').replace(/\r/g,'\\r') || ''
       msg += `\n| ${r.name} | ${status} | ${cost} | ${note} |`
     }
 
