@@ -71,13 +71,14 @@ export class TestHosting extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#测试图床(\\d+)?$', fnc: 'testHosting', permission: 'master' },
-        { reg: '^#图床$', fnc: 'testWithImage', permission: 'master' },
+        { reg: '^#测试图床(\\d+)?$', fnc: 'testHosting' },
+        { reg: '^#图床$', fnc: 'testWithImage' },
       ],
     })
   }
 
   async testHosting() {
+    if(!this.e.isMaster) return false
     if (Bot._hostingSettings?.apps?.test === false) return
     if (this.e.adapter_id !== 'QQBot') return
     if (_testing) { await this.reply('⏳ 测试正在进行中，请稍后再试'); return }
@@ -103,6 +104,7 @@ export class TestHosting extends plugin {
    * #图床 - 使用当前消息附带/引用的图片作为测试图进行图床测试
    */
   async testWithImage() {
+    if(!this.e.isMaster) return false
     if (Bot._hostingSettings?.apps?.test === false) return
     if (this.e.adapter_id !== 'QQBot') return
     if (_testing) { await this.reply('⏳ 测试正在进行中，请稍后再试'); return }

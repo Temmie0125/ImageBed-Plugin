@@ -66,7 +66,6 @@ export class HostingStats extends plugin {
         {
           reg: '^#?(图床|imagebed)状态',
           fnc: 'hostingStats',
-          permission: 'master',
         },
         {
           reg: '^#?(图床|imagebed)失败(记录|原因)',
@@ -84,6 +83,7 @@ export class HostingStats extends plugin {
 
   /** #图床状态 */
   async hostingStats() {
+    if(!this.e.isMaster) return false
     if (Bot._hostingSettings?.apps?.stats === false) return
     if (this.e.adapter_id !== 'QQBot') return
     const msg = this.e.msg || ''
@@ -156,6 +156,7 @@ export class HostingStats extends plugin {
 
   /** #图床失败原因 */
   async hostingFailReasons() {
+    if(!this.e.isMaster) return false
     if (Bot._hostingSettings?.apps?.stats === false) return
     if (this.e.adapter_id !== 'QQBot') return
     const msg = this.e.msg || ''
@@ -215,6 +216,7 @@ export class HostingStats extends plugin {
 
   /** #清空CNB图床 */
   async clearCnbAssets() {
+    if(!this.e.isMaster) return false
     if (Bot._hostingSettings?.apps?.stats === false) return
     if (this.e.adapter_id !== 'QQBot') return
 
