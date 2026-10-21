@@ -228,6 +228,14 @@ const HOSTING_META = {
       { key: "reuse_wait", type: "number", label: "复用等待时间(秒)", desc: "复用链接放回缓存池前的等待秒数 (默认 30)，等待期间避免刚上传的文件被覆盖，仅在开启\"复用预上传链接\"后生效" },
     ],
   },
+  local: {
+    name: "本机公网",
+    fields: [
+      { key: "enabled", type: "bool", label: "启用", desc: "开启后该图床将在上传时被候选" },
+      { key: "baseUrl", type: "text", label: "公网访问地址", placeholder: "http://example.com:2536", desc: "对外可达的 http(s)://域名或IP:端口（不含路径），须与实际访问地址一致（防火墙/端口映射需放行），留空则本图床不可用" },
+      { key: "ttl", type: "number", label: "保留时长(秒)", desc: "图片在本机的保留时长（秒），到期后 URL 失效（访问落回 404 占位图），最小 10，默认 300" },
+    ],
+  },
 }
 
 // ==================== 导出入口 ====================

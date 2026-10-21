@@ -24,6 +24,7 @@ import { KurobbsHosting } from './lib/kurobbs.js'
 import { MiyousheHosting } from './lib/miyoushe.js'
 import { CliImHosting } from './lib/cliim.js'
 import { PicGoHosting } from './lib/picgo.js'
+import { LocalHosting } from './lib/local.js'
 import { loadSettings, ensurePriority } from './lib/base.js'
 import { TestHosting } from './apps/testHosting.js'
 import { HostingStats } from './apps/stats.js'
@@ -48,6 +49,7 @@ const HOSTING_MAP = {
   miyoushe: MiyousheHosting,
   cliim: CliImHosting,
   picgo: PicGoHosting,
+  local: LocalHosting,
 }
 
 // ==================== 初始化 ====================
@@ -145,7 +147,7 @@ apps:
           return url
         }
       } catch (e) {
-        logger.error(`[${h.name}] 失败 (${Date.now() - t0}ms): ${e.message}`)
+        logger.error(`[${h.name}] 失败 (${Date.now() - t0}ms): ${e.message}\n${e.stack}`)
       }
     }
     logger.warn('[图床] 全部失败，使用本地存储')
