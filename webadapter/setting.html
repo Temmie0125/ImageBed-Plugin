@@ -4,6 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>图床设置</title>
+<script>
+// 主题同步：读取主面板共享的 qwa_theme（auto|light|dark），并监听系统/主面板的深浅切换
+(function () {
+  try {
+    var m = localStorage.getItem("qwa_theme")
+    if (m !== "light" && m !== "dark") m = "auto"
+    var apply = function () {
+      var dark = m === "dark" || (m === "auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches)
+      if (dark) document.documentElement.setAttribute("data-theme", "dark")
+      else document.documentElement.removeAttribute("data-theme")
+      document.documentElement.style.colorScheme = dark ? "dark" : "light"
+    }
+    apply()
+    window.addEventListener("message", function (e) {
+      if (e && e.data && e.data.type === "theme-changed") { m = e.data.mode || "auto"; apply() }
+    })
+    if (window.matchMedia) {
+      var mq = matchMedia("(prefers-color-scheme: dark)")
+      var onChange = function () { if (m === "auto") apply() }
+      mq.addEventListener ? mq.addEventListener("change", onChange) : mq.addListener(onChange)
+    }
+  } catch (err) {}
+})()
+</script>
 <style>
 :root {
   --accent: #4f6ef7;
@@ -17,6 +41,24 @@
   --success: #10b981;
   --radius: 12px;
   --shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --accent: #6d87f8;
+  --accent-light: #26304d;
+  --bg: #111318;
+  --card: #1a1d23;
+  --border: #2e333d;
+  --text: #e3e6ea;
+  --text2: #a9b1bc;
+  --danger: #f28b82;
+  --success: #34c579;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.4);
+  /* 表头/输入底色（JS 内联样式经 var 回退引用） */
+  --thead-bg: #20242c;
+  --input-bg: #22262e;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -271,6 +313,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   .hosting-grid { grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
   .modal { max-width:95vw; }
 }
+
+/* ===== 深色模式局部修正（变量覆盖不到的硬编码浅色值） ===== */
+html[data-theme="dark"] .pill-switch .slider { background:#3a414b; }
+/* 选中态规则需同样带前缀，否则被上面的灰色覆盖压掉 */
+html[data-theme="dark"] .pill-switch input:checked + .slider { background:var(--accent); }
+html[data-theme="dark"] .cusel-trigger { background:var(--input-bg); }
+html[data-theme="dark"] .cusel-trigger:hover,
+html[data-theme="dark"] .cusel.open .cusel-trigger { background:var(--card); }
+html[data-theme="dark"] .hosting-card-status.on { background:rgba(16,185,129,.14); }
+html[data-theme="dark"] .hosting-card-status.off { background:rgba(239,68,68,.14); }
 </style>
 </head>
 <body>
@@ -928,7 +980,7 @@ function renderTestResult(d) {
   let html = '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;">测试文件: ' + formatTestBytes(d.size) + ' · 共 ' + d.results.length + ' 个图床</div>'
   html += '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
   html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
-  html += '<thead><tr style="background:#f9fafb;color:var(--text2);">'
+  html += '<thead><tr style="background:var(--thead-bg,#f9fafb);color:var(--text2);">'
   html += '<th style="text-align:left;padding:8px 10px;">图床</th>'
   html += '<th style="text-align:center;padding:8px 10px;">状态</th>'
   html += '<th style="text-align:right;padding:8px 10px;">耗时</th>'
