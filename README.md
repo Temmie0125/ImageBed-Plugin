@@ -2,7 +2,15 @@
 
 Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式的图片/文件上传服务，支持自动 fallback、统计记录与 Web 可视化管理。
 
-如果使用了我的[🔗cnb图床](https://gitee.com/wind-trace-typ/cnb-image-bed)这个插件，那么请先找到`Yunzai/plugins/example/cnb图床.js`并删除，再安装本插件使用（本插件已经含有cnb图床，该插件为早期版本容易和本插件冲突）
+> 本仓库 Fork 自上游 [wind-trace-typ/ImageBed-Plugin](https://gitee.com/wind-trace-typ/ImageBed-Plugin)，感谢上游作者的开发与维护。Fork 以自用定制为主，与上游存在行为差异，安装请以本 README 为准，上游原版与交流方式见文末[「上游与反馈」](#上游与反馈)。
+
+如果使用了上游作者的[🔗cnb图床](https://gitee.com/wind-trace-typ/cnb-image-bed)这个插件，那么请先找到`Yunzai/plugins/example/cnb图床.js`并删除，再安装本插件使用（本插件已经含有cnb图床，该插件为早期版本容易和本插件冲突）
+
+## 本 Fork 的主要改动
+
+- 新增**本机公网图床**（`local`）：使用 Yunzai 内置 HTTP 服务 (Bot.fileToUrl) 直出图片，并将 URL 主机部分改写为配置的公网地址，QQ 客户端直接拉取缓存；URL 以内容 md5 命名，作为外部图床全部失效时的兜底，支持 Web 面板配置
+- 图床上传失败日志输出完整调用堆栈，便于排查（如 PUT 超时类问题）
+- 设置面板适配深色模式（与 QWA 主面板 `qwa_theme` 主题同步）
 
 ## 功能特性
 
@@ -14,7 +22,7 @@ Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式�
 - **自动配置补全**：新增图床自动追加到优先级末尾，缺失字段自动补写
 - **Cookie 自动获取**：QQ 空间 / QQ 群作业图床无需手动填写 Cookie
 
-## 支持图床（16个）
+## 支持图床（17个）
 
 | 图床 | configKey | 类型 | 需要配置 | 说明 |
 |------|-----------|------|----------|------|
@@ -34,6 +42,7 @@ Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式�
 | 兔小巢 | `txc` | 兔小巢 | cookie | 暂不可用 |
 | CliIm | `cliim` | 免费图床 | 无 | cli.im 免费图床，无需任何配置，返回链接为杭州oss，速度还不错，推荐备用 |
 | PicGo | `picgo` | 免费图床 | API 密钥 | www.picgo.net，基于 chevereto 的免费图床，标准 V1 API 上传，单文件 25MB 上限，速度较慢，可上传文件；支持自动删除、URL 缓存去重 |
+| 本机公网 | `local` | 本机直出 | baseUrl | 本 Fork 新增：使用 Yunzai 内置 HTTP 服务直出图片并改写主机为公网地址，无需任何第三方服务；URL 以内容 md5 命名，同图同 URL；TTL 内占用本机内存与上行带宽，适合作兜底 |
 
 ## 快速开始
 
@@ -42,8 +51,10 @@ Yunzai Bot 统一图床插件 —— 为机器人提供多图床优先级链式�
 在Yunzai根目录执行以下指令拉取插件：
 
 ```bash
-git clone https://gitee.com/wind-trace-typ/ImageBed-Plugin.git ./plugins/ImageBed-Plugin
+git clone https://github.com/Temmie0125/ImageBed-Plugin.git ./plugins/ImageBed-Plugin
 ```
+
+> 上游原版安装：`git clone https://gitee.com/wind-trace-typ/ImageBed-Plugin.git ./plugins/ImageBed-Plugin`
 
 然后在执行以下指令安装依赖：
 
@@ -87,7 +98,7 @@ const url = await Bot.imageToUrl(imageBuffer, { imagebed: 'cnb' })
 const url = await Bot.imageToUrl(imageBuffer)
 ```
 
-若是使用此版本[🔗QQBot-Plugin](https://gitee.com/wind-trace-typ/Yunzai-QQBot-Plugin)qqbot适配器，适配器会自动调用此图床插件转换图片url做markdown图片
+若是使用此Fork版[🔗QQBot-Plugin](https://github.com/Temmie0125/Yunzai-QQBot-Plugin)qqbot适配器，适配器会自动调用此图床插件转换图片url做markdown图片
 
 ## 命令一览
 
@@ -108,7 +119,7 @@ const url = await Bot.imageToUrl(imageBuffer)
 
 ## Web 管理面板
 
-- 当前可以配合[🔗qqbot-web-adapter插件](https://gitee.com/wind-trace-typ/QQBot-Web-Adapter)直接在网页端快捷设置，具体参考下图：
+- 当前可以配合[Fork版🔗qqbot-web-adapter插件](https://github.com/Temmie0125/QQBot-Web-Adapter)直接在网页端快捷设置，具体参考下图：
 ![alt text](./webadapter/webadapter.png)
 
 ## 依赖
@@ -139,7 +150,7 @@ ImageBed-Plugin/
 
 ## QQBot适配器适配情况
 
-- 如果是TRSS Yunzai + 我改版的[🔗QQBot-Plugin](https://gitee.com/wind-trace-typ/QQBot-Plugin),那么无需修改就可支持自动使用此图床插件
+- 如果是TRSS Yunzai + 本Fork改版的[🔗QQBot-Plugin](https://github.com/Temmie0125/Yunzai-QQBot-Plugin),那么无需修改就可支持自动使用此图床插件
 
 - 如果是Miao-Yunzai + Lain-Plugin适配器，也无需修改本身就支持自动使用本插件
 
@@ -205,8 +216,7 @@ const image = await this.makeBotImage(buffer) || { url: typeof Bot.imageToUrl ==
 
 - 打开[picgo](https://www.picgo.net/),然后注册登录，然后点击右上角头像，点击设置，找到`API 密钥`，复制出来，然后填入配置文件即可
 
-## 问题反馈
+## 上游与反馈
 
-- [🔗内部交流群 1095352740](https://qm.qq.com/q/JxYAlbKRGy)反馈
-- 邮箱459521475@qq.com反馈
-- 直接提issue反馈(可能不会及时看到)
+- 本 Fork 的问题请直接提 [issue](https://github.com/Temmie0125/ImageBed-Plugin/issues) 反馈
+- 上游原版仓库：[wind-trace-typ/ImageBed-Plugin](https://gitee.com/wind-trace-typ/ImageBed-Plugin)，上游问题可通过[🔗内部交流群 1095352740](https://qm.qq.com/q/JxYAlbKRGy)或邮箱459521475@qq.com反馈
